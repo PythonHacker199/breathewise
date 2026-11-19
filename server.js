@@ -32,10 +32,12 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
  */
 
 /**
- * Build the HTTP server. Exposed as a factory so tests can inject a fake clock and fetch.
+ * Build the request handler shared by the standalone server (Docker, Cloud Run) and the
+ * serverless function (Vercel, api/[...path].js). Tests inject a fake clock and fetch.
  * @param {AppOptions} [options]
+ * @returns {Promise<(req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>>}
  */
-export async function createApp(options = {}) {
+export async function createHandler(options = {}) {
   const {
     geminiApiKey,
     airQualityApiKey,
@@ -81,7 +83,15 @@ export async function createApp(options = {}) {
     }
   }
 
-  return http.createServer(handler);
+  return handler;
+}
+
+/**
+ * Build the HTTP server.
+ * @param {AppOptions} [options]
+ */
+export async function createApp(options = {}) {
+  return http.createServer(await createHandler(options));
 }
 
 /**
@@ -97,9 +107,24 @@ export function optionsFromEnv(env) {
     // Comma-separated; set to an empty string to disable fallback.
     fallbackModels:
       env.GEMINI_FALLBACK_MODELS === undefined ? undefined : env.GEMINI_FALLBACK_MODELS.split(',').map((s) => s.trim()).filter(Boolean),
-    // K_SERVICE is set by Cloud Run, which sits behind Google's front end.
-    trustProxy: env.TRUST_PROXY === '1' || Boolean(env.K_SERVICE),
+    // K_SERVICE is set by Cloud Run and VERCEL by Vercel; both sit behind a front end that sets X-Forwarded-For.
+    trustProxy: env.TRUST_PROXY === '1' || Boolean(env.K_SERVICE) || Boolean(env.VERCEL),
   };
+}
+
+/** @type {ReturnType<typeof createHandler> | undefined} */
+let serverlessHandler;
+
+/**
+ * Serverless entry point (Vercel runs this module's default export for every request).
+ * The handler is built once per instance and reused, so the air-data cache stays warm.
+ * @param {http.IncomingMessage} req
+ * @param {http.ServerResponse} res
+ */
+export default async function serverless(req, res) {
+  serverlessHandler ??= createHandler(optionsFromEnv(process.env));
+  const handle = await serverlessHandler;
+  await handle(req, res);
 }
 
 const isEntryPoint = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

@@ -1,10 +1,11 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import http from 'node:http';
+import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { createApp, optionsFromEnv, SECURITY_HEADERS } from '../server.js';
+import serverless, { createApp, createHandler, optionsFromEnv, SECURITY_HEADERS } from '../server.js';
 import { NOW, fakeFetch, geminiReply, geocodingFixture, json, openMeteoAirFixture } from './helpers.js';
 
 const quiet = { log() {}, warn() {}, error() {} };
@@ -147,5 +148,45 @@ describe('optionsFromEnv', () => {
     const opts = optionsFromEnv({ GEMINI_API_KEY: ' g ', GOOGLE_AIR_QUALITY_API_KEY: 'a', GEMINI_FALLBACK_MODELS: 'x, ,y', K_SERVICE: 'svc' });
     assert.deepEqual(opts, { geminiApiKey: 'g', airQualityApiKey: 'a', model: undefined, fallbackModels: ['x', 'y'], trustProxy: true });
     assert.equal(optionsFromEnv({ GEMINI_API_KEY: '  ' }).geminiApiKey, undefined);
+  });
+});
+
+/** Start a plain http server around a request handler and check /api/health. @param {http.RequestListener} handle */
+async function assertHealthy(handle) {
+  const server = http.createServer(handle);
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(undefined)));
+  const { port } = /** @type {import('node:net').AddressInfo} */ (server.address());
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/health`);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('x-frame-options'), 'DENY');
+    const body = await res.json();
+    assert.equal(body.status, 'ok');
+    assert.equal(typeof body.ai.enabled, 'boolean');
+  } finally {
+    await new Promise((r) => server.close(r));
+  }
+}
+
+describe('Vercel deployment', () => {
+  test('trusts the proxy on Vercel', () => {
+    assert.equal(optionsFromEnv({ VERCEL: '1' }).trustProxy, true);
+    assert.equal(optionsFromEnv({}).trustProxy, false);
+  });
+
+  test('vercel.json sends the same security headers as the server and ships the built app with the function', async () => {
+    const config = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+    const all = config.headers.find((/** @type {{ source: string }} */ h) => h.source === '/(.*)');
+    assert.deepEqual(Object.fromEntries(all.headers.map((/** @type {{ key: string, value: string }} */ h) => [h.key, h.value])), { ...SECURITY_HEADERS });
+    assert.equal(config.functions['server.js'].includeFiles, 'web/dist/**');
+    assert.equal(config.outputDirectory, 'web/dist');
+  });
+
+  test('the shared handler answers API requests like the standalone server', async () => {
+    await assertHealthy(await createHandler({ now: () => NOW, log: quiet, webDir: null, fetchImpl: fakeFetch(upstream) }));
+  });
+
+  test('the default export is a working serverless handler', async () => {
+    await assertHealthy(serverless);
   });
 });

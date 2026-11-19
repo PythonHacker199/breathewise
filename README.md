@@ -2,6 +2,8 @@
 
 **A GenAI clean-air coach for families and communities living through winter smog.**
 
+**Live:** https://breathewise-seven.vercel.app
+
 BreatheWise looks up the live air where you are and asks a few questions about your household. It then builds a plan for today:
 
 - **Low-exposure routine:** the cleanest and worst hours of the next 24, when to exercise or air the home, and when to keep children and older relatives inside. Each item has a one-click Google Calendar reminder.
@@ -49,15 +51,14 @@ Google's NO₂ and O₃ values (ppb) are converted to µg/m³ at 25 °C (× 46.0
 
 ## Google services used
 
-- **Gemini API** (`gemini-flash-latest`, falling back to `gemini-flash-lite-latest`): the coach and follow-up answers, using structured output.
-- **Google Air Quality API:** current conditions, local index and hourly forecast.
+- **Gemini API:** the coach and follow-up answers, using structured output, with a model fallback chain (the live site uses `gemini-flash-lite-latest` first, then `gemini-flash-latest`).
+- **Google Air Quality API:** current conditions, local index and hourly forecast, used whenever `GOOGLE_AIR_QUALITY_API_KEY` is set. The public demo runs without it and uses Open-Meteo.
 - **Google Calendar:** event-template links for each routine window.
-- **Cloud Run:** hosting, built from the `Dockerfile`.
-- **Secret Manager:** both API keys, injected as environment variables, never in the repo or the browser.
+- **Cloud Run and Secret Manager:** a ready `Dockerfile` and deploy command (below); keys are injected from Secret Manager.
 
 ## Security
 
-- API keys live only on the server (Secret Manager on Cloud Run, `.env` locally). The browser never sees them, and the Google key is sent in the `x-goog-api-key` header, not the URL.
+- API keys live only on the server (Vercel encrypted environment variables or Secret Manager on Cloud Run, `.env` locally). The browser never sees them, and the Google key is sent in the `x-goog-api-key` header, not the URL.
 - Strict Content Security Policy, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` (geolocation only for this site) and `Cross-Origin-Opener-Policy`.
 - All input is validated with explicit limits (`src/validate.js`); unknown fields are ignored and text is cleaned of control characters.
 - Body-size limit, JSON-only API, per-IP rate limit (30 requests a minute), and upstream timeouts (8 s for air data, 15 s per Gemini model).
@@ -104,7 +105,21 @@ npm run check
 
 This runs ESLint, strict TypeScript (`checkJs` on the server, `strict` on the web), the node:test suite (science, validation, air providers, the coach's grounding filter, and server security headers, limits and routes) and the Vitest suite for the UI. The same steps run in GitHub Actions on every push.
 
-## Deploy (Cloud Run)
+## Deploy
+
+### Vercel (the live site)
+
+`server.js` exports a default request handler, so Vercel runs the whole app as one function. `vercel.json` builds the React app, bundles `web/dist` with the function, pins the Mumbai region and sets the same security headers as the server (a test keeps them in sync).
+
+```bash
+vercel env add GEMINI_API_KEY production --sensitive
+```
+
+```bash
+vercel deploy --prod
+```
+
+### Cloud Run
 
 ```bash
 gcloud run deploy breathewise --source . --region asia-south1 --allow-unauthenticated --set-secrets GEMINI_API_KEY=gemini-api-key:latest,GOOGLE_AIR_QUALITY_API_KEY=air-quality-api-key:latest
@@ -113,7 +128,7 @@ gcloud run deploy breathewise --source . --region asia-south1 --allow-unauthenti
 ## Project layout
 
 ```
-server.js              app factory, env options, HTTP server
+server.js              request handler, HTTP server, Vercel entry, env options
 src/http/              JSON, static files, limits, security headers
 src/routes/api.js      /api/health, /api/places, /api/plan, /api/ask
 src/air/               Google Air Quality, Open-Meteo, provider with cache + fallback
