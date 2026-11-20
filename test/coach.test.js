@@ -1,7 +1,15 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { allowedNumbers, answerQuestion, buildFacts, curatedCoach, generateCoach, groundText, sanitizeCoach } from '../src/ai/coach.js';
+import {
+  allowedNumbers,
+  answerQuestion,
+  buildFacts,
+  curatedCoach,
+  generateCoach,
+  groundText,
+  sanitizeCoach,
+} from '../src/ai/coach.js';
 import { createGeminiClient } from '../src/ai/gemini.js';
 import { buildPlan } from '../src/science/plan.js';
 import { DEFAULT_PROFILE } from '../src/validate.js';
@@ -12,11 +20,19 @@ const air = {
   source: /** @type {const} */ ('open-meteo'),
   timeZone: 'Asia/Kolkata',
   current: { time: NOW.toISOString(), pm25: 64.3, pm10: 65, no2: null, o3: null },
-  hourly: Array.from({ length: 48 }, (_, i) => ({ time: new Date((BASE_UNIX + i * HOUR) * 1000).toISOString(), pm25: pm25At(i), pm10: null })),
+  hourly: Array.from({ length: 48 }, (_, i) => ({
+    time: new Date((BASE_UNIX + i * HOUR) * 1000).toISOString(),
+    pm25: pm25At(i),
+    pm10: null,
+  })),
   localIndex: null,
 };
 const profile = structuredClone(DEFAULT_PROFILE);
-const facts = buildFacts({ plan: buildPlan({ air, profile, now: NOW }), profile, placeName: 'Delhi' });
+const facts = buildFacts({
+  plan: buildPlan({ air, profile, now: NOW }),
+  profile,
+  placeName: 'Delhi',
+});
 
 /** @param {unknown} data */
 const gemini = (data) =>
@@ -37,11 +53,17 @@ describe('number grounding', () => {
   });
 
   test('keeps sentences whose numbers are in the facts, including decimals', () => {
-    assert.equal(groundText('PM2.5 is 64.3 µg/m³ today. Stay inside.', allowed), 'PM2.5 is 64.3 µg/m³ today. Stay inside.');
+    assert.equal(
+      groundText('PM2.5 is 64.3 µg/m³ today. Stay inside.', allowed),
+      'PM2.5 is 64.3 µg/m³ today. Stay inside.',
+    );
   });
 
   test('drops sentences with invented numbers', () => {
-    assert.equal(groundText('Risk rises by 37% today. Keep windows closed.', allowed), 'Keep windows closed.');
+    assert.equal(
+      groundText('Risk rises by 37% today. Keep windows closed.', allowed),
+      'Keep windows closed.',
+    );
     assert.equal(groundText('About 1,000,000 people are affected.', allowed), '');
   });
 });
@@ -81,13 +103,23 @@ describe('coach output', () => {
   test('uses Gemini when available and falls back when it fails or is not configured', async () => {
     const ai = await generateCoach(
       facts,
-      gemini({ summary: 'Air is Unhealthy.', todayPlan: [{ time: '19:30', action: 'Walk.' }], familyTips: [], whyItMatters: [], oneThing: 'Walk.' }),
+      gemini({
+        summary: 'Air is Unhealthy.',
+        todayPlan: [{ time: '19:30', action: 'Walk.' }],
+        familyTips: [],
+        whyItMatters: [],
+        oneThing: 'Walk.',
+      }),
       silent,
     );
     assert.equal(ai.source, 'gemini');
     assert.equal(ai.model, 'test-model');
 
-    const broken = createGeminiClient({ apiKey: 'k', fallbackModels: [], fetchImpl: fakeFetch({ generateContent: () => json({}, 500) }) });
+    const broken = createGeminiClient({
+      apiKey: 'k',
+      fallbackModels: [],
+      fetchImpl: fakeFetch({ generateContent: () => json({}, 500) }),
+    });
     assert.equal((await generateCoach(facts, broken, silent)).source, 'curated');
     assert.equal((await generateCoach(facts, null, silent)).source, 'curated');
   });
@@ -124,7 +156,15 @@ describe('coach output', () => {
     const fetchImpl = fakeFetch({
       generateContent: () =>
         json(
-          geminiReply(JSON.stringify({ summary: 'Ok.', todayPlan: [{ time: 'now', action: 'Rest.' }], familyTips: [], whyItMatters: [], oneThing: 'Rest.' })),
+          geminiReply(
+            JSON.stringify({
+              summary: 'Ok.',
+              todayPlan: [{ time: 'now', action: 'Rest.' }],
+              familyTips: [],
+              whyItMatters: [],
+              oneThing: 'Rest.',
+            }),
+          ),
         ),
     });
     const client = createGeminiClient({ apiKey: 'k', fallbackModels: [], fetchImpl });
@@ -138,7 +178,10 @@ describe('coach output', () => {
     const client = createGeminiClient({
       apiKey: 'k',
       fallbackModels: [],
-      fetchImpl: fakeFetch({ generateContent: () => json(geminiReply('Today is 64.3 µg/m³. That is 12 times worse than Paris.')) }),
+      fetchImpl: fakeFetch({
+        generateContent: () =>
+          json(geminiReply('Today is 64.3 µg/m³. That is 12 times worse than Paris.')),
+      }),
     });
     const { answer } = await answerQuestion(facts, 'How bad is it?', client);
     assert.equal(answer, 'Today is 64.3 µg/m³.');

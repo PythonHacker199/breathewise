@@ -24,16 +24,58 @@
  */
 
 /** Category levels by name, so rules read `level >= AQI_LEVEL.SENSITIVE` instead of a bare number. */
-export const AQI_LEVEL = Object.freeze({ GOOD: 0, MODERATE: 1, SENSITIVE: 2, UNHEALTHY: 3, VERY_UNHEALTHY: 4, HAZARDOUS: 5 });
+export const AQI_LEVEL = Object.freeze({
+  GOOD: 0,
+  MODERATE: 1,
+  SENSITIVE: 2,
+  UNHEALTHY: 3,
+  VERY_UNHEALTHY: 4,
+  HAZARDOUS: 5,
+});
 
 /** @type {ReadonlyArray<AqiCategory>} */
 export const AQI_CATEGORIES = Object.freeze([
   { key: 'good', label: 'Good', min: 0, max: 50, color: '#00e400', level: AQI_LEVEL.GOOD },
-  { key: 'moderate', label: 'Moderate', min: 51, max: 100, color: '#ffff00', level: AQI_LEVEL.MODERATE },
-  { key: 'sensitive', label: 'Unhealthy for Sensitive Groups', min: 101, max: 150, color: '#ff7e00', level: AQI_LEVEL.SENSITIVE },
-  { key: 'unhealthy', label: 'Unhealthy', min: 151, max: 200, color: '#ff0000', level: AQI_LEVEL.UNHEALTHY },
-  { key: 'very-unhealthy', label: 'Very Unhealthy', min: 201, max: 300, color: '#8f3f97', level: AQI_LEVEL.VERY_UNHEALTHY },
-  { key: 'hazardous', label: 'Hazardous', min: 301, max: 500, color: '#7e0023', level: AQI_LEVEL.HAZARDOUS },
+  {
+    key: 'moderate',
+    label: 'Moderate',
+    min: 51,
+    max: 100,
+    color: '#ffff00',
+    level: AQI_LEVEL.MODERATE,
+  },
+  {
+    key: 'sensitive',
+    label: 'Unhealthy for Sensitive Groups',
+    min: 101,
+    max: 150,
+    color: '#ff7e00',
+    level: AQI_LEVEL.SENSITIVE,
+  },
+  {
+    key: 'unhealthy',
+    label: 'Unhealthy',
+    min: 151,
+    max: 200,
+    color: '#ff0000',
+    level: AQI_LEVEL.UNHEALTHY,
+  },
+  {
+    key: 'very-unhealthy',
+    label: 'Very Unhealthy',
+    min: 201,
+    max: 300,
+    color: '#8f3f97',
+    level: AQI_LEVEL.VERY_UNHEALTHY,
+  },
+  {
+    key: 'hazardous',
+    label: 'Hazardous',
+    min: 301,
+    max: 500,
+    color: '#7e0023',
+    level: AQI_LEVEL.HAZARDOUS,
+  },
 ]);
 
 /** [concentration low, concentration high, AQI low, AQI high] */
@@ -108,7 +150,9 @@ function interpolate(concentration, table) {
  * @param {number} pm25 µg/m³
  */
 export function aqiFromPm25(pm25) {
-  if (!Number.isFinite(pm25) || pm25 < 0) throw new RangeError('PM2.5 must be a non-negative number.');
+  if (!Number.isFinite(pm25) || pm25 < 0) {
+    throw new RangeError('PM2.5 must be a non-negative number.');
+  }
   return interpolate(truncate(pm25, 1), PM25_BREAKPOINTS);
 }
 
@@ -117,7 +161,9 @@ export function aqiFromPm25(pm25) {
  * @param {number} pm10 µg/m³
  */
 export function aqiFromPm10(pm10) {
-  if (!Number.isFinite(pm10) || pm10 < 0) throw new RangeError('PM10 must be a non-negative number.');
+  if (!Number.isFinite(pm10) || pm10 < 0) {
+    throw new RangeError('PM10 must be a non-negative number.');
+  }
   return interpolate(truncate(pm10, 0), PM10_BREAKPOINTS);
 }
 
@@ -135,7 +181,9 @@ export function categoryForAqi(aqi) {
  * @param {number} pm25 µg/m³
  */
 export function indiaCategoryForPm25(pm25) {
-  return (INDIA_PM25_BANDS.find((b) => pm25 <= b.max) ?? INDIA_PM25_BANDS[INDIA_PM25_BANDS.length - 1]).label;
+  return (
+    INDIA_PM25_BANDS.find((b) => pm25 <= b.max) ?? INDIA_PM25_BANDS[INDIA_PM25_BANDS.length - 1]
+  ).label;
 }
 
 /**

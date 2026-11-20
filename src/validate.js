@@ -2,22 +2,20 @@
  * Validation and normalisation of everything the browser sends. Missing optional fields fall
  * back to sensible defaults; anything present but wrong is reported per field.
  */
-import { isCommuteMode } from './science/emissions.js';
+import {
+  COMMUTE_OPTIONS,
+  COOKING_FUEL_OPTIONS,
+  DEFAULT_PROFILE,
+  HEATING_OPTIONS,
+  NUMBER_RANGES,
+  TEXT_LIMITS,
+  VENTILATION_OPTIONS,
+  optionValues,
+} from '../shared/profile-schema.js';
 
-/** @typedef {import('./science/emissions.js').CommuteMode} CommuteMode */
-/** @typedef {'sealed'|'average'|'leaky'} Ventilation */
-/** @typedef {'lpg'|'piped_gas'|'electric'|'biomass'|'kerosene'} CookingFuel */
-/** @typedef {'none'|'electric'|'gas'|'wood_coal'|'kerosene'} Heating */
+export { DEFAULT_PROFILE };
 
-/**
- * @typedef {object} Profile
- * @property {{ adults: number, children: number, olderAdults: number }} household
- * @property {{ respiratory: boolean, heart: boolean, pregnancy: boolean }} conditions
- * @property {{ mode: CommuteMode, oneWayKm: number, daysPerWeek: number }} commute
- * @property {{ roomAreaM2: number, ventilation: Ventilation, purifierCadr: number, cookingFuel: CookingFuel, heating: Heating }} home
- * @property {{ outdoorExerciseMinutes: number, incenseOrCoils: boolean, smokingIndoors: boolean }} habits
- * @property {string} notes
- */
+/** @typedef {import('../shared/profile-schema.js').Profile} Profile */
 
 /** @typedef {{ lat: number, lon: number, name: string, timeZone?: string }} Location */
 
@@ -36,23 +34,6 @@ export function isTimeZone(value) {
 }
 
 /** @template T @typedef {{ ok: true, value: T } | { ok: false, errors: Record<string, string> }} Result */
-
-export const VENTILATION = /** @type {const} */ (['sealed', 'average', 'leaky']);
-export const COOKING_FUELS = /** @type {const} */ (['lpg', 'piped_gas', 'electric', 'biomass', 'kerosene']);
-export const HEATING = /** @type {const} */ (['none', 'electric', 'gas', 'wood_coal', 'kerosene']);
-
-export const LIMITS = Object.freeze({ name: 80, notes: 300, question: 400, search: 80, people: 12, km: 200, area: 500, cadr: 2000, minutes: 600 });
-
-export const DEFAULT_PROFILE = Object.freeze(
-  /** @type {Profile} */ ({
-    household: { adults: 2, children: 0, olderAdults: 0 },
-    conditions: { respiratory: false, heart: false, pregnancy: false },
-    commute: { mode: 'car_petrol', oneWayKm: 10, daysPerWeek: 5 },
-    home: { roomAreaM2: 15, ventilation: 'average', purifierCadr: 0, cookingFuel: 'lpg', heating: 'none' },
-    habits: { outdoorExerciseMinutes: 30, incenseOrCoils: false, smokingIndoors: false },
-    notes: '',
-  }),
-);
 
 // Control characters (except \n and \t) and the bidi overrides used in text-spoofing attacks.
 // eslint-disable-next-line no-control-regex -- matching control characters is the purpose of this pattern.
@@ -115,7 +96,8 @@ class SectionReader {
     if (isBlank(raw)) return fallback;
     const value = typeof raw === 'string' ? Number(raw) : raw;
     if (isNumberInRange(value, { min, max, integer })) return value;
-    this.errors[`${this.section}.${field}`] = `Enter ${integer ? 'a whole number' : 'a number'} from ${min} to ${max}.`;
+    this.errors[`${this.section}.${field}`] =
+      `Enter ${integer ? 'a whole number' : 'a number'} from ${min} to ${max}.`;
     return fallback;
   }
 
@@ -161,11 +143,81 @@ function oneOf(options) {
    * @param {unknown} value
    * @returns {value is T}
    */
-  return (value) => typeof value === 'string' && /** @type {ReadonlyArray<string>} */ (options).includes(value);
+  return (value) =>
+    typeof value === 'string' && /** @type {ReadonlyArray<string>} */ (options).includes(value);
+}
+
+/** Allow-lists for the profile's choice fields, built once from the shared schema. */
+const IS_ALLOWED = Object.freeze({
+  mode: oneOf(optionValues(COMMUTE_OPTIONS)),
+  ventilation: oneOf(optionValues(VENTILATION_OPTIONS)),
+  cookingFuel: oneOf(optionValues(COOKING_FUEL_OPTIONS)),
+  heating: oneOf(optionValues(HEATING_OPTIONS)),
+});
+
+/** @param {SectionReader} r @returns {Profile['household']} */
+function readHousehold(r) {
+  const d = DEFAULT_PROFILE.household;
+  const range = NUMBER_RANGES.household;
+  return {
+    adults: r.number('adults', d.adults, range.adults),
+    children: r.number('children', d.children, range.children),
+    olderAdults: r.number('olderAdults', d.olderAdults, range.olderAdults),
+  };
+}
+
+/** @param {SectionReader} r @returns {Profile['conditions']} */
+function readConditions(r) {
+  const d = DEFAULT_PROFILE.conditions;
+  return {
+    respiratory: r.boolean('respiratory', d.respiratory),
+    heart: r.boolean('heart', d.heart),
+    pregnancy: r.boolean('pregnancy', d.pregnancy),
+  };
+}
+
+/** @param {SectionReader} r @returns {Profile['commute']} */
+function readCommute(r) {
+  const d = DEFAULT_PROFILE.commute;
+  const range = NUMBER_RANGES.commute;
+  return {
+    mode: r.choice('mode', d.mode, IS_ALLOWED.mode),
+    oneWayKm: r.number('oneWayKm', d.oneWayKm, range.oneWayKm),
+    daysPerWeek: r.number('daysPerWeek', d.daysPerWeek, range.daysPerWeek),
+  };
+}
+
+/** @param {SectionReader} r @returns {Profile['home']} */
+function readHome(r) {
+  const d = DEFAULT_PROFILE.home;
+  const range = NUMBER_RANGES.home;
+  return {
+    roomAreaM2: r.number('roomAreaM2', d.roomAreaM2, range.roomAreaM2),
+    ventilation: r.choice('ventilation', d.ventilation, IS_ALLOWED.ventilation),
+    purifierCadr: r.number('purifierCadr', d.purifierCadr, range.purifierCadr),
+    cookingFuel: r.choice('cookingFuel', d.cookingFuel, IS_ALLOWED.cookingFuel),
+    heating: r.choice('heating', d.heating, IS_ALLOWED.heating),
+  };
+}
+
+/** @param {SectionReader} r @returns {Profile['habits']} */
+function readHabits(r) {
+  const d = DEFAULT_PROFILE.habits;
+  const range = NUMBER_RANGES.habits;
+  return {
+    outdoorExerciseMinutes: r.number(
+      'outdoorExerciseMinutes',
+      d.outdoorExerciseMinutes,
+      range.outdoorExerciseMinutes,
+    ),
+    incenseOrCoils: r.boolean('incenseOrCoils', d.incenseOrCoils),
+    smokingIndoors: r.boolean('smokingIndoors', d.smokingIndoors),
+  };
 }
 
 /**
- * Validate a household profile.
+ * Validate a household profile. Missing fields take the shared defaults; every invalid field is
+ * reported under "section.field", all at once, so the form can mark them together.
  * @param {unknown} body
  * @returns {Result<Profile>}
  */
@@ -173,47 +225,21 @@ export function validateProfile(body) {
   /** @type {Record<string, string>} */
   const errors = {};
   const source = isRecord(body) ? body : {};
-  const d = DEFAULT_PROFILE;
-
-  const household = new SectionReader(source.household, 'household', errors);
-  const conditions = new SectionReader(source.conditions, 'conditions', errors);
-  const commute = new SectionReader(source.commute, 'commute', errors);
-  const home = new SectionReader(source.home, 'home', errors);
-  const habits = new SectionReader(source.habits, 'habits', errors);
+  /** @param {Exclude<keyof Profile, 'notes'>} section */
+  const reader = (section) => new SectionReader(source[section], section, errors);
 
   /** @type {Profile} */
   const value = {
-    household: {
-      adults: household.number('adults', d.household.adults, { min: 0, max: LIMITS.people, integer: true }),
-      children: household.number('children', d.household.children, { min: 0, max: LIMITS.people, integer: true }),
-      olderAdults: household.number('olderAdults', d.household.olderAdults, { min: 0, max: LIMITS.people, integer: true }),
-    },
-    conditions: {
-      respiratory: conditions.boolean('respiratory', d.conditions.respiratory),
-      heart: conditions.boolean('heart', d.conditions.heart),
-      pregnancy: conditions.boolean('pregnancy', d.conditions.pregnancy),
-    },
-    commute: {
-      mode: commute.choice('mode', d.commute.mode, isCommuteMode),
-      oneWayKm: commute.number('oneWayKm', d.commute.oneWayKm, { min: 0, max: LIMITS.km }),
-      daysPerWeek: commute.number('daysPerWeek', d.commute.daysPerWeek, { min: 0, max: 7, integer: true }),
-    },
-    home: {
-      roomAreaM2: home.number('roomAreaM2', d.home.roomAreaM2, { min: 4, max: LIMITS.area }),
-      ventilation: home.choice('ventilation', d.home.ventilation, oneOf(VENTILATION)),
-      purifierCadr: home.number('purifierCadr', d.home.purifierCadr, { min: 0, max: LIMITS.cadr }),
-      cookingFuel: home.choice('cookingFuel', d.home.cookingFuel, oneOf(COOKING_FUELS)),
-      heating: home.choice('heating', d.home.heating, oneOf(HEATING)),
-    },
-    habits: {
-      outdoorExerciseMinutes: habits.number('outdoorExerciseMinutes', d.habits.outdoorExerciseMinutes, { min: 0, max: LIMITS.minutes, integer: true }),
-      incenseOrCoils: habits.boolean('incenseOrCoils', d.habits.incenseOrCoils),
-      smokingIndoors: habits.boolean('smokingIndoors', d.habits.smokingIndoors),
-    },
-    notes: cleanText(source.notes, LIMITS.notes),
+    household: readHousehold(reader('household')),
+    conditions: readConditions(reader('conditions')),
+    commute: readCommute(reader('commute')),
+    home: readHome(reader('home')),
+    habits: readHabits(reader('habits')),
+    notes: cleanText(source.notes, TEXT_LIMITS.notes),
   };
 
-  if (value.household.adults + value.household.children + value.household.olderAdults === 0) {
+  const { adults, children, olderAdults } = value.household;
+  if (adults + children + olderAdults === 0) {
     errors['household.adults'] = 'Add at least one person to the household.';
   }
   return Object.keys(errors).length > 0 ? { ok: false, errors } : { ok: true, value };
@@ -236,7 +262,11 @@ export function validateLocation(body) {
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   // Round to ~1 km: enough for air quality, and avoids sending precise home coordinates upstream.
   /** @type {Location} */
-  const value = { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100, name: cleanText(source.name, LIMITS.name) };
+  const value = {
+    lat: Math.round(lat * 100) / 100,
+    lon: Math.round(lon * 100) / 100,
+    name: cleanText(source.name, TEXT_LIMITS.placeName),
+  };
   if (isTimeZone(source.timeZone)) value.timeZone = source.timeZone;
   return { ok: true, value };
 }
@@ -246,8 +276,10 @@ export function validateLocation(body) {
  * @returns {{ ok: true, value: string } | { ok: false, error: string }}
  */
 export function validateQuestion(value) {
-  const question = cleanText(value, LIMITS.question);
-  return question.length >= 3 ? { ok: true, value: question } : { ok: false, error: 'Ask a question of at least 3 characters.' };
+  const question = cleanText(value, TEXT_LIMITS.question);
+  return question.length >= 3
+    ? { ok: true, value: question }
+    : { ok: false, error: 'Ask a question of at least 3 characters.' };
 }
 
 /**
@@ -255,6 +287,8 @@ export function validateQuestion(value) {
  * @returns {{ ok: true, value: string } | { ok: false, error: string }}
  */
 export function validateSearch(value) {
-  const query = cleanText(value, LIMITS.search);
-  return query.length >= 2 ? { ok: true, value: query } : { ok: false, error: 'Type at least 2 characters of a city name.' };
+  const query = cleanText(value, TEXT_LIMITS.search);
+  return query.length >= 2
+    ? { ok: true, value: query }
+    : { ok: false, error: 'Type at least 2 characters of a city name.' };
 }

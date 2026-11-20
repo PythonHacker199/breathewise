@@ -15,7 +15,12 @@ const CACHE_MAX_ENTRIES = 500;
 /**
  * @param {{ googleApiKey?: string, fetchImpl?: typeof fetch, now?: () => Date, log?: Pick<Console, 'warn'> }} options
  */
-export function createAirProvider({ googleApiKey, fetchImpl, now = () => new Date(), log = console }) {
+export function createAirProvider({
+  googleApiKey,
+  fetchImpl,
+  now = () => new Date(),
+  log = console,
+}) {
   /** @type {ReturnType<typeof createTtlCache<import('../science/plan.js').AirData>>} */
   const cache = createTtlCache({ max: CACHE_MAX_ENTRIES, ttlMs: CACHE_TTL_MS });
 
@@ -38,10 +43,19 @@ export function createAirProvider({ googleApiKey, fetchImpl, now = () => new Dat
             (d) => d.timeZone,
             () => 'UTC',
           ));
-        air = await fetchGoogleAir(location, { apiKey: googleApiKey, timeZone, now: now(), fetchImpl });
-        if (air.hourly.length === 0) throw new UpstreamError('Google Air Quality returned no forecast.');
+        air = await fetchGoogleAir(location, {
+          apiKey: googleApiKey,
+          timeZone,
+          now: now(),
+          fetchImpl,
+        });
+        if (air.hourly.length === 0) {
+          throw new UpstreamError('Google Air Quality returned no forecast.');
+        }
       } catch (err) {
-        log.warn(`Google Air Quality failed, using Open-Meteo: ${err instanceof Error ? err.message : String(err)}`);
+        log.warn(
+          `Google Air Quality failed, using Open-Meteo: ${err instanceof Error ? err.message : String(err)}`,
+        );
         air = undefined;
       }
     }

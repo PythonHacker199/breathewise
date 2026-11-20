@@ -6,7 +6,14 @@ export const ASSESSMENT: Assessment = {
   pm10: 190,
   aqi: 210,
   dominant: 'pm25',
-  category: { key: 'very-unhealthy', label: 'Very Unhealthy', min: 201, max: 300, color: '#8f3f97', level: 4 },
+  category: {
+    key: 'very-unhealthy',
+    label: 'Very Unhealthy',
+    min: 201,
+    max: 300,
+    color: '#8f3f97',
+    level: 4,
+  },
   whoMultiple: 9,
   cigarettesPerDay: 6.1,
   indiaCategory: 'Very Poor',
@@ -19,9 +26,21 @@ export const ASSESSMENT: Assessment = {
 };
 
 const HOURLY: HourlyPoint[] = [
-  { time: '2026-11-19T14:30:00Z', pm25: 135, category: { key: 'very-unhealthy', label: 'Very Unhealthy', color: '#8f3f97' } },
-  { time: '2026-11-19T15:30:00Z', pm25: 162.1, category: { key: 'very-unhealthy', label: 'Very Unhealthy', color: '#8f3f97' } },
-  { time: '2026-11-19T16:30:00Z', pm25: 55.8, category: { key: 'unhealthy', label: 'Unhealthy', color: '#ff0000' } },
+  {
+    time: '2026-11-19T14:30:00Z',
+    pm25: 135,
+    category: { key: 'very-unhealthy', label: 'Very Unhealthy', color: '#8f3f97' },
+  },
+  {
+    time: '2026-11-19T15:30:00Z',
+    pm25: 162.1,
+    category: { key: 'very-unhealthy', label: 'Very Unhealthy', color: '#8f3f97' },
+  },
+  {
+    time: '2026-11-19T16:30:00Z',
+    pm25: 55.8,
+    category: { key: 'unhealthy', label: 'Unhealthy', color: '#ff0000' },
+  },
 ];
 
 export const PLAN_RESPONSE: PlanResponse = {
@@ -55,17 +74,29 @@ export const PLAN_RESPONSE: PlanResponse = {
       label: 'Petrol car',
       kgPerWeek: 17,
       kgPerYear: 886.5,
-      alternatives: [{ mode: 'metro', label: 'Metro', kgPerYear: 144.6, kgSavedPerYear: 741.9, percentSaved: 84 }],
+      alternatives: [
+        {
+          mode: 'metro',
+          label: 'Metro',
+          kgPerYear: 144.6,
+          kgSavedPerYear: 741.9,
+          percentSaved: 84,
+        },
+      ],
     },
     actions: [
       {
         id: 'purifier-size',
         category: 'indoor',
         title: 'Clean the air of one room with a HEPA purifier',
-        impact: 'A purifier with a clean air delivery rate of at least 210 m³/h would bring this room from about 96.4 to about 11.4 µg/m³.',
+        impact:
+          'A purifier with a clean air delivery rate of at least 210 m³/h would bring this room from about 96.4 to about 11.4 µg/m³.',
         why: 'Pick the room where the family sleeps.',
         priority: 95,
-        source: { label: 'US EPA, Guide to Air Cleaners in the Home (2018)', url: 'https://www.epa.gov/indoor-air-quality-iaq/guide-air-cleaners-home' },
+        source: {
+          label: 'US EPA, Guide to Air Cleaners in the Home (2018)',
+          url: 'https://www.epa.gov/indoor-air-quality-iaq/guide-air-cleaners-home',
+        },
       },
       {
         id: 'mask',

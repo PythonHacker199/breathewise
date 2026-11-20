@@ -8,7 +8,14 @@ const assessment: Assessment = {
   pm10: 260,
   aqi: 263,
   dominant: 'pm25',
-  category: { key: 'very-unhealthy', label: 'Very Unhealthy', min: 201, max: 300, color: '#8f3f97', level: 4 },
+  category: {
+    key: 'very-unhealthy',
+    label: 'Very Unhealthy',
+    min: 201,
+    max: 300,
+    color: '#8f3f97',
+    level: 4,
+  },
   whoMultiple: 12,
   cigarettesPerDay: 8.2,
   indiaCategory: 'Very Poor',
@@ -40,7 +47,9 @@ describe('AirSummary', () => {
   it('alerts when someone sensitive lives in the household', () => {
     const { rerender } = render(<AirSummary assessment={assessment} placeName="New Delhi" />);
     expect(screen.getByRole('alert')).toHaveTextContent(/more sensitive/);
-    rerender(<AirSummary assessment={{ ...assessment, sensitiveAlert: false }} placeName="New Delhi" />);
+    rerender(
+      <AirSummary assessment={{ ...assessment, sensitiveAlert: false }} placeName="New Delhi" />,
+    );
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

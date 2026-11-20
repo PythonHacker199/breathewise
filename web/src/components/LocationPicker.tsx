@@ -4,9 +4,18 @@ import type { Location, Place } from '@/lib/api';
 import { placeLabel, usePlaceSearch } from '@/lib/usePlaceSearch';
 import { BUTTON_SECONDARY, Field } from './ui';
 
-const isSelected = (value: Location | null, place: Place) => value?.lat === place.lat && value?.lon === place.lon;
+const isSelected = (value: Location | null, place: Place) =>
+  value?.lat === place.lat && value?.lon === place.lon;
 
-function PlaceResults({ places, value, onPick }: { places: Place[]; value: Location | null; onPick: (place: Place) => void }) {
+function PlaceResults({
+  places,
+  value,
+  onPick,
+}: {
+  places: Place[];
+  value: Location | null;
+  onPick: (place: Place) => void;
+}) {
   if (places.length === 0) return null;
   return (
     <ul className="space-y-1.5" aria-label="Search results">
@@ -31,7 +40,13 @@ function PlaceResults({ places, value, onPick }: { places: Place[]; value: Locat
 }
 
 /** City search (Open-Meteo geocoding via the server) or the browser's own location. */
-export function LocationPicker({ value, onChange }: { value: Location | null; onChange: (location: Location) => void }) {
+export function LocationPicker({
+  value,
+  onChange,
+}: {
+  value: Location | null;
+  onChange: (location: Location) => void;
+}) {
   const [query, setQuery] = useState('');
   const { results, status, search, locateMe } = usePlaceSearch(onChange);
   const selectedPlace = results.find((place) => isSelected(value, place));
@@ -43,7 +58,12 @@ export function LocationPicker({ value, onChange }: { value: Location | null; on
 
   return (
     <div className="space-y-3">
-      <form onSubmit={onSearch} role="search" aria-label="Find your city" className="flex items-end gap-2">
+      <form
+        onSubmit={onSearch}
+        role="search"
+        aria-label="Find your city"
+        className="flex items-end gap-2"
+      >
         <div className="flex-1">
           <Field id="city" label="Where are you?">
             {(props) => (
@@ -68,7 +88,11 @@ export function LocationPicker({ value, onChange }: { value: Location | null; on
       <p role="status" aria-live="polite" className="min-h-5 text-sm text-ink-muted">
         {status}
       </p>
-      <PlaceResults places={results} value={value} onPick={(p) => onChange({ lat: p.lat, lon: p.lon, name: p.name, timeZone: p.timeZone })} />
+      <PlaceResults
+        places={results}
+        value={value}
+        onPick={(p) => onChange({ lat: p.lat, lon: p.lon, name: p.name, timeZone: p.timeZone })}
+      />
       {value && (
         <p className="text-sm text-ink" aria-live="polite">
           Selected: <strong>{selectedPlace ? placeLabel(selectedPlace) : value.name}</strong>

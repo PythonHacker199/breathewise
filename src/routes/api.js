@@ -15,7 +15,12 @@ import { clientIp, createRateLimiter, createTtlCache } from '../http/limits.js';
 import { overallAqi } from '../science/aqi.js';
 import { buildPlan } from '../science/plan.js';
 import { upcomingHours } from '../science/routine.js';
-import { validateLocation, validateProfile, validateQuestion, validateSearch } from '../validate.js';
+import {
+  validateLocation,
+  validateProfile,
+  validateQuestion,
+  validateSearch,
+} from '../validate.js';
 
 /** Identical facts reuse the coach's explanation for this long. */
 const COACH_CACHE_TTL_MS = 15 * 60 * 1000;
@@ -25,8 +30,10 @@ const CHART_HOURS = 24;
 
 const MESSAGES = Object.freeze({
   aiNotConfigured: 'The AI assistant is not configured on this server (missing GEMINI_API_KEY).',
-  airUnavailable: 'Air-quality data for this location is unavailable right now. Please try again in a minute.',
-  placesUnavailable: 'Place search is unavailable right now. You can use your current location instead.',
+  airUnavailable:
+    'Air-quality data for this location is unavailable right now. Please try again in a minute.',
+  placesUnavailable:
+    'Place search is unavailable right now. You can use your current location instead.',
   askFailed: 'The AI assistant could not answer right now. Please try again.',
   invalidInput: 'Please check the highlighted details.',
   rateLimited: 'Too many requests. Please wait a moment and try again.',
@@ -88,7 +95,9 @@ async function lookupAir(ctx, location) {
   try {
     return await ctx.air.lookup(location);
   } catch (err) {
-    ctx.log.warn(`Air lookup failed: ${err instanceof UpstreamError ? err.message : describeError(err)}`);
+    ctx.log.warn(
+      `Air lookup failed: ${err instanceof UpstreamError ? err.message : describeError(err)}`,
+    );
     throw new HttpError(502, MESSAGES.airUnavailable);
   }
 }
@@ -161,7 +170,11 @@ async function handlePlan(ctx, req, res) {
   const built = await planFromBody(ctx, await readJsonBody(req));
   sendJson(res, 200, {
     place: built.location,
-    air: { source: built.airData.source, timeZone: built.airData.timeZone, hourly: chartHours(built.airData, ctx.now()) },
+    air: {
+      source: built.airData.source,
+      timeZone: built.airData.timeZone,
+      hourly: chartHours(built.airData, ctx.now()),
+    },
     plan: built.plan,
     coach: await coachFor(ctx, built.facts),
   });

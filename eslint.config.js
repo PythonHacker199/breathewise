@@ -28,7 +28,7 @@ export default [
   },
   {
     // Keep application code in small, single-purpose functions.
-    files: ['server.js', 'src/**/*.js'],
+    files: ['server.js', 'src/**/*.js', 'shared/**/*.js'],
     rules: {
       complexity: ['error', 10],
       'max-depth': ['error', 3],

@@ -7,8 +7,21 @@
  * (higher first; ties keep the order of RULES below).
  */
 import { AQI_LEVEL } from './aqi.js';
-import { EXPOSED_MODES, MODE_LABELS, TAILPIPE_MODES, commuteAlternatives, commuteEmissions } from './emissions.js';
-import { AIR_EXCHANGE_PER_HOUR, cigarettesPerDay, indoorPm25, percentReduction, recommendedCadr, roomVolume } from './exposure.js';
+import {
+  EXPOSED_MODES,
+  MODE_LABELS,
+  TAILPIPE_MODES,
+  commuteAlternatives,
+  commuteEmissions,
+} from './emissions.js';
+import {
+  AIR_EXCHANGE_PER_HOUR,
+  cigarettesPerDay,
+  indoorPm25,
+  percentReduction,
+  recommendedCadr,
+  roomVolume,
+} from './exposure.js';
 import { SOURCES } from './sources.js';
 
 export { SOURCES };
@@ -57,7 +70,8 @@ function modelRoom({ outdoorPm25, profile }) {
   const volume = roomVolume(roomAreaM2);
   const targetCadr = recommendedCadr(volume);
   /** @param {number} cadr @param {number} [airExchange] */
-  const indoor = (cadr, airExchange = AIR_EXCHANGE_PER_HOUR[ventilation]) => indoorPm25({ outdoorPm25, airExchange, roomVolume: volume, cadr });
+  const indoor = (cadr, airExchange = AIR_EXCHANGE_PER_HOUR[ventilation]) =>
+    indoorPm25({ outdoorPm25, airExchange, roomVolume: volume, cadr });
   return {
     targetCadr,
     closed: indoor(0),
@@ -71,7 +85,8 @@ function modelRoom({ outdoorPm25, profile }) {
 const roomChange = (/** @type {number} */ before, /** @type {number} */ after) =>
   `from about ${before} to about ${after} µg/m³ of PM2.5, ${percentReduction(before, after)}% lower`;
 
-const hasCommute = (/** @type {Profile['commute']} */ commute) => commute.oneWayKm > 0 && commute.daysPerWeek > 0;
+const hasCommute = (/** @type {Profile['commute']} */ commute) =>
+  commute.oneWayKm > 0 && commute.daysPerWeek > 0;
 
 // ---------------------------------------------------------------- indoor air
 
@@ -100,7 +115,9 @@ function purifierSize({ level, profile, room }) {
   if (purifierCadr >= room.targetCadr) return null;
   let title = 'Clean the air of one room with a HEPA purifier';
   if (purifierCadr > 0) title = 'Your purifier is undersized for this room';
-  else if (level === AQI_LEVEL.GOOD) title = 'Be ready for smog days: size a HEPA purifier for one room';
+  else if (level === AQI_LEVEL.GOOD) {
+    title = 'Be ready for smog days: size a HEPA purifier for one room';
+  }
   let priority = 40;
   if (level >= AQI_LEVEL.SENSITIVE) priority = 95;
   else if (level === AQI_LEVEL.MODERATE) priority = 70;
@@ -151,7 +168,8 @@ function swapCoils({ profile }) {
     id: 'coils',
     category: 'indoor',
     title: 'Swap mosquito coils and incense for smoke-free options',
-    impact: 'Burning one mosquito coil released as much PM2.5 as 75 to 137 cigarettes in laboratory tests.',
+    impact:
+      'Burning one mosquito coil released as much PM2.5 as 75 to 137 cigarettes in laboratory tests.',
     why: 'Use mosquito nets, window screens or plug-in electric repellents, and keep incense for well-ventilated days.',
     priority: 85,
     source: SOURCES.coils,
@@ -165,7 +183,8 @@ function smokeFreeHome({ profile }) {
     id: 'smoking',
     category: 'indoor',
     title: 'Make the home smoke-free',
-    impact: 'Tobacco smoke is one of the largest indoor sources of fine particles and undoes the work of a purifier.',
+    impact:
+      'Tobacco smoke is one of the largest indoor sources of fine particles and undoes the work of a purifier.',
     why: 'Smoke outside, away from doors and windows, and never in the car with children.',
     priority: 88,
     source: SOURCES.whoHousehold,
@@ -181,7 +200,8 @@ function cleanCooking({ profile }) {
     id: 'clean-cooking',
     category: 'indoor',
     title: 'Move cooking to LPG, piped gas or electric',
-    impact: 'Household air pollution from cooking with polluting fuels was linked to an estimated 3.2 million deaths a year worldwide in 2020.',
+    impact:
+      'Household air pollution from cooking with polluting fuels was linked to an estimated 3.2 million deaths a year worldwide in 2020.',
     why: 'If switching is not possible yet, cook with a lid on, use a chimney or exhaust fan, and keep children away from the stove.',
     priority: 92,
     source: SOURCES.whoHousehold,
@@ -195,7 +215,8 @@ function cookingFan({ profile }) {
     id: 'cooking-fan',
     category: 'indoor',
     title: 'Run the kitchen exhaust while cooking',
-    impact: 'Frying and roasting produce fine particles indoors even with clean fuels; venting them stops them spreading through the home.',
+    impact:
+      'Frying and roasting produce fine particles indoors even with clean fuels; venting them stops them spreading through the home.',
     why: 'Cook with lids on and run the exhaust fan or chimney for 10 minutes after cooking.',
     priority: 40,
     source: SOURCES.whoHousehold,
@@ -208,7 +229,8 @@ function plantsMyth() {
     id: 'plants-myth',
     category: 'indoor',
     title: "Don't count on houseplants to clean the air",
-    impact: 'Matching the air cleaning of ordinary ventilation would take 10 to 1,000 plants per square metre of floor.',
+    impact:
+      'Matching the air cleaning of ordinary ventilation would take 10 to 1,000 plants per square metre of floor.',
     why: 'Plants are pleasant, but a purifier or filter does the real work during smog.',
     priority: 20,
     source: SOURCES.plants,
@@ -225,7 +247,9 @@ function wearMask({ outdoorPm25, level, profile }) {
   return {
     id: 'mask',
     category: 'routine',
-    title: exposed ? `Wear a well-fitted N95 or FFP2 mask on your ${MODE_LABELS[mode].toLowerCase()} commute` : 'Wear a well-fitted N95 or FFP2 mask outdoors',
+    title: exposed
+      ? `Wear a well-fitted N95 or FFP2 mask on your ${MODE_LABELS[mode].toLowerCase()} commute`
+      : 'Wear a well-fitted N95 or FFP2 mask outdoors',
     impact:
       'Certified N95 filters capture at least 95% of test particles; a tight seal around the nose and chin matters as much as the filter. Cloth and surgical masks protect far less.',
     why: `Today's PM2.5 of ${outdoorPm25} µg/m³ is like breathing in about ${cigarettesPerDay(outdoorPm25)} cigarettes a day for anyone outside all day.`,
@@ -282,7 +306,8 @@ function cleanHeating({ profile }) {
     id: 'clean-heating',
     category: 'sustainable',
     title: 'Heat with electricity instead of wood, coal or kerosene',
-    impact: 'Burning solid fuels and kerosene indoors is a major source of household air pollution, and the smoke also adds to winter smog outside.',
+    impact:
+      'Burning solid fuels and kerosene indoors is a major source of household air pollution, and the smoke also adds to winter smog outside.',
     why: 'Heat the room you are in with an electric heater and keep doors closed to hold the warmth.',
     priority: 89,
     source: SOURCES.whoHousehold,
@@ -295,7 +320,8 @@ function noOpenBurning() {
     id: 'no-burning',
     category: 'sustainable',
     title: 'Never burn leaves, waste or crop residue',
-    impact: 'Open burning releases smoke at ground level, right where people breathe, and adds to the winter smog over the whole neighbourhood.',
+    impact:
+      'Open burning releases smoke at ground level, right where people breathe, and adds to the winter smog over the whole neighbourhood.',
     why: 'Compost garden waste or hand it to municipal collection, skip firecrackers, and report open burning to your local authority.',
     priority: 50,
     source: SOURCES.whoAqg,

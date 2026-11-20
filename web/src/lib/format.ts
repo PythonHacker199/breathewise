@@ -17,18 +17,34 @@ export function textOn(hex: string): '#000000' | '#ffffff' {
 
 /** "19:30" in the location's time zone. */
 export function formatTime(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(iso));
 }
 
 /** Google Calendar event template for a time window (UTC instants). */
-export function googleCalendarUrl(title: string, startIso: string, endIso: string, details: string): string {
+export function googleCalendarUrl(
+  title: string,
+  startIso: string,
+  endIso: string,
+  details: string,
+): string {
   const stamp = (iso: string) =>
     new Date(iso)
       .toISOString()
       .replace(/[-:]/g, '')
       .replace(/\.\d{3}/, '');
-  const params = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${stamp(startIso)}/${stamp(endIso)}`, details });
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${stamp(startIso)}/${stamp(endIso)}`,
+    details,
+  });
   return `https://calendar.google.com/calendar/render?${params}`;
 }
 
-export const formatNumber = (n: number) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 1 }).format(n);
+export const formatNumber = (n: number) =>
+  new Intl.NumberFormat('en-IN', { maximumFractionDigits: 1 }).format(n);

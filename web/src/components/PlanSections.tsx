@@ -14,12 +14,19 @@ export function RoutineCard({ items, placeName }: { items: RoutineItem[]; placeN
       <ol className="space-y-4">
         {items.map((item) => (
           <li key={item.id} className="border-l-4 border-leaf-600 pl-4">
-            {item.when && <p className="text-sm font-bold tabular-nums text-leaf-700">{item.when}</p>}
+            {item.when && (
+              <p className="text-sm font-bold tabular-nums text-leaf-700">{item.when}</p>
+            )}
             <h3 className="font-semibold text-ink">{item.title}</h3>
             <p className="mt-0.5 text-sm leading-relaxed text-ink-muted">{item.detail}</p>
             {item.startIso && item.endIso && (
               <a
-                href={googleCalendarUrl(`${item.title} (${placeName})`, item.startIso, item.endIso, item.detail)}
+                href={googleCalendarUrl(
+                  `${item.title} (${placeName})`,
+                  item.startIso,
+                  item.endIso,
+                  item.detail,
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-leaf-700 underline-offset-2 hover:underline"
@@ -48,14 +55,19 @@ export function ActionsCard({ actions }: { actions: Action[] }) {
       <h2 id="actions-title" className="mb-1 font-display text-xl font-semibold text-ink">
         What to do, and what it changes
       </h2>
-      <p className="mb-5 text-sm text-ink-muted">Every impact below is calculated for your household; sources are linked.</p>
+      <p className="mb-5 text-sm text-ink-muted">
+        Every impact below is calculated for your household; sources are linked.
+      </p>
       <div className="space-y-6">
         {GROUPS.map((group) => {
           const list = actions.filter((a) => a.category === group.key);
           if (list.length === 0) return null;
           return (
             <section key={group.key} aria-labelledby={`group-${group.key}`}>
-              <h3 id={`group-${group.key}`} className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-leaf-700">
+              <h3
+                id={`group-${group.key}`}
+                className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-leaf-700"
+              >
                 <span aria-hidden="true">{group.icon}</span> {group.title}
               </h3>
               <ul className="grid gap-3 md:grid-cols-2">
@@ -102,11 +114,15 @@ export function CommuteCard({ commute }: { commute: CommuteSummary }) {
         Your commute&apos;s footprint
       </CardTitle>
       <p className="text-ink">
-        <strong>{commute.label}:</strong> about <strong>{formatNumber(commute.kgPerYear)} kg CO₂e a year</strong> ({formatNumber(commute.kgPerWeek)} kg a week).
+        <strong>{commute.label}:</strong> about{' '}
+        <strong>{formatNumber(commute.kgPerYear)} kg CO₂e a year</strong> (
+        {formatNumber(commute.kgPerWeek)} kg a week).
       </p>
       {commute.alternatives.length > 0 && (
         <table className="mt-4 w-full text-left text-sm">
-          <caption className="mb-2 text-left text-sm font-semibold text-ink">Lower-emission alternatives</caption>
+          <caption className="mb-2 text-left text-sm font-semibold text-ink">
+            Lower-emission alternatives
+          </caption>
           <thead className="text-ink-faint">
             <tr>
               <th scope="col" className="py-1.5 font-semibold">
@@ -135,7 +151,10 @@ export function CommuteCard({ commute }: { commute: CommuteSummary }) {
           </tbody>
         </table>
       )}
-      <p className="mt-3 text-xs text-ink-faint">Factors: UK DESNZ 2022 greenhouse gas conversion factors (per passenger-km, one person per car).</p>
+      <p className="mt-3 text-xs text-ink-faint">
+        Factors: UK DESNZ 2022 greenhouse gas conversion factors (per passenger-km, one person per
+        car).
+      </p>
     </Card>
   );
 }

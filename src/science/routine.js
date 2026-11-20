@@ -61,7 +61,12 @@ function clockFormatter(timeZone, withMinutes) {
   const key = `${timeZone}|${withMinutes}`;
   let formatter = formatters.get(key);
   if (!formatter) {
-    formatter = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', hourCycle: 'h23', ...(withMinutes && { minute: '2-digit' }) });
+    formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone,
+      hour: '2-digit',
+      hourCycle: 'h23',
+      ...(withMinutes && { minute: '2-digit' }),
+    });
     formatters.set(key, formatter);
   }
   return formatter;
@@ -127,7 +132,9 @@ export function findWindow(hours, timeZone, { length = 1, pick = 'cleanest' } = 
  * @param {string} timeZone
  */
 function isDaytimeRun(slice, timeZone) {
-  const consecutive = slice.every((h, j) => j === 0 || Date.parse(h.time) - Date.parse(slice[j - 1].time) === HOUR_MS);
+  const consecutive = slice.every(
+    (h, j) => j === 0 || Date.parse(h.time) - Date.parse(slice[j - 1].time) === HOUR_MS,
+  );
   return consecutive && slice.every((h) => isDaytime(h.time, timeZone));
 }
 
@@ -265,8 +272,18 @@ export function buildRoutine({ hourly, timeZone, now, exerciseMinutes, hasSensit
   if (!cleanest || !worst) return { cleanest, worst, items: [], exerciseDoseSavedUg: 0 };
 
   const activeHours = Math.max(exerciseMinutes, MIN_ACTIVE_MINUTES) / 60;
-  const exerciseDoseSavedUg = Math.max(0, inhaledDose(worst.pm25, activeHours, 'moderate') - inhaledDose(cleanest.pm25, activeHours, 'moderate'));
-  const items = [exerciseItem(cleanest, exerciseDoseSavedUg), ventilationItem(cleanest), avoidPeakItem(worst)];
-  if (hasSensitiveMembers && worst.category.level >= SENSITIVE_ALERT_LEVEL) items.push(sensitiveItem(cleanest));
+  const exerciseDoseSavedUg = Math.max(
+    0,
+    inhaledDose(worst.pm25, activeHours, 'moderate') -
+      inhaledDose(cleanest.pm25, activeHours, 'moderate'),
+  );
+  const items = [
+    exerciseItem(cleanest, exerciseDoseSavedUg),
+    ventilationItem(cleanest),
+    avoidPeakItem(worst),
+  ];
+  if (hasSensitiveMembers && worst.category.level >= SENSITIVE_ALERT_LEVEL) {
+    items.push(sensitiveItem(cleanest));
+  }
   return { cleanest, worst, items, exerciseDoseSavedUg };
 }

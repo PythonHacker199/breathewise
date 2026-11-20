@@ -19,15 +19,32 @@ export function openMeteoAirFixture() {
   const time = Array.from({ length: 48 }, (_, i) => BASE_UNIX + i * HOUR);
   return {
     timezone: 'Asia/Kolkata',
-    current: { time: BASE_UNIX + 10 * HOUR, pm2_5: 64.3, pm10: 65, nitrogen_dioxide: 67.5, ozone: 112 },
-    hourly: { time, pm2_5: time.map((_, i) => (i === 47 ? null : pm25At(i))), pm10: time.map(() => 90) },
+    current: {
+      time: BASE_UNIX + 10 * HOUR,
+      pm2_5: 64.3,
+      pm10: 65,
+      nitrogen_dioxide: 67.5,
+      ozone: 112,
+    },
+    hourly: {
+      time,
+      pm2_5: time.map((_, i) => (i === 47 ? null : pm25At(i))),
+      pm10: time.map(() => 90),
+    },
   };
 }
 
 export function geocodingFixture() {
   return {
     results: [
-      { name: 'Delhi', admin1: 'Delhi', country: 'India', latitude: 28.65195, longitude: 77.23149, timezone: 'Asia/Kolkata' },
+      {
+        name: 'Delhi',
+        admin1: 'Delhi',
+        country: 'India',
+        latitude: 28.65195,
+        longitude: 77.23149,
+        timezone: 'Asia/Kolkata',
+      },
       { name: 'No coordinates' },
     ],
   };
@@ -55,14 +72,20 @@ export function googleForecastFixture() {
       const i = 11 + k;
       return {
         dateTime: new Date((BASE_UNIX + i * HOUR) * 1000).toISOString(),
-        pollutants: [{ code: 'pm25', concentration: { value: pm25At(i), units: 'MICROGRAMS_PER_CUBIC_METER' } }],
+        pollutants: [
+          {
+            code: 'pm25',
+            concentration: { value: pm25At(i), units: 'MICROGRAMS_PER_CUBIC_METER' },
+          },
+        ],
       };
     }),
   };
 }
 
 /** @param {unknown} data @param {number} [status] */
-export const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
+export const json = (data, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 
 /**
  * Fake fetch routing by URL substring. Calls are recorded on `.calls`.
@@ -81,4 +104,6 @@ export function fakeFetch(routes) {
 }
 
 /** Gemini response wrapper. @param {string} text */
-export const geminiReply = (text) => ({ candidates: [{ content: { parts: [{ text }] }, finishReason: 'STOP' }] });
+export const geminiReply = (text) => ({
+  candidates: [{ content: { parts: [{ text }] }, finishReason: 'STOP' }],
+});

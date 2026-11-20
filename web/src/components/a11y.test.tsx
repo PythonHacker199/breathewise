@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PROFILE } from '@/lib/profile';
+import { STARTER_PROFILE } from '@/lib/profile';
 import { expectNoAxeViolations } from '@/test/axe';
 import { PLAN_RESPONSE } from '@/test/fixtures';
 import { AirSummary } from './AirSummary';
@@ -26,13 +26,20 @@ describe('accessibility (axe-core, WCAG 2.2 AA)', () => {
   });
 
   it('air summary', async () => {
-    const { container } = render(<AirSummary assessment={plan.assessment} placeName={place.name} />);
+    const { container } = render(
+      <AirSummary assessment={plan.assessment} placeName={place.name} />,
+    );
     await expectNoAxeViolations(container);
   });
 
   it('profile form, including field errors', async () => {
-    const errors = { 'home.roomAreaM2': 'Enter a number from 4 to 500.', 'commute.mode': 'Choose one of the options.' };
-    const { container } = render(<ProfileForm profile={DEFAULT_PROFILE} errors={errors} onChange={noop} />);
+    const errors = {
+      'home.roomAreaM2': 'Enter a number from 4 to 500.',
+      'commute.mode': 'Choose one of the options.',
+    };
+    const { container } = render(
+      <ProfileForm profile={STARTER_PROFILE} errors={errors} onChange={noop} />,
+    );
     await expectNoAxeViolations(container);
   });
 
@@ -61,7 +68,7 @@ describe('accessibility (axe-core, WCAG 2.2 AA)', () => {
     const { container } = render(
       <>
         <CoachCard coach={coach} />
-        <AskCard location={place} profile={DEFAULT_PROFILE} enabled />
+        <AskCard location={place} profile={STARTER_PROFILE} enabled />
       </>,
     );
     await expectNoAxeViolations(container);

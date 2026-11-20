@@ -106,7 +106,7 @@ npm run check
 
 This runs, in order, and the same steps run in GitHub Actions on every push:
 
-- **Prettier** formatting check.
+- **Prettier** formatting check (100-column lines).
 - **ESLint** with enforced maintainability limits on application code: cyclomatic complexity ≤ 10, nesting depth ≤ 3, functions of at most 50 lines (60 for React components), and at most 4 parameters per server function.
 - **Strict TypeScript**: `checkJs` with JSDoc types on the server, `strict` on the web app, and no `any`.
 - **71 server tests** (node:test): AQI breakpoints, exposure and emission maths, the routine and action rules, validation, both air providers, the Gemini client's fallback and the coach's number-grounding filter, and the HTTP layer (security headers, rate limits, body limits, static files, Vercel entry).
@@ -115,8 +115,8 @@ This runs, in order, and the same steps run in GitHub Actions on every push:
 ### Design notes
 
 - **Rules, not branches.** Each personalised action in `src/science/actions.js` is a small rule that returns an action or `null`; `buildActions` runs them all and sorts by priority. Adding an action means adding one rule.
-- **One source of truth.** AQI categories, levels and colours live in `src/science/aqi.js`; the API sends each forecast hour's category, so the browser never re-implements the EPA bands.
-- **Shared handler.** `createHandler` in `server.js` serves the same app as a standalone Node server (Docker, Cloud Run) and as a Vercel function.
+- **One source of truth.** The household profile (allowed values, labels, numeric ranges and defaults) is defined once in `shared/profile-schema.js`: the server validates against it and the React form is built from it, so they cannot drift apart. AQI categories, levels and colours live in `src/science/aqi.js`, and the API sends each forecast hour's category so the browser never re-implements the EPA bands.
+- **Shared handler.** `createHandler` in `src/app.js` builds the app once; `server.js` runs it as a standalone Node server (Docker, Cloud Run) and exports it as a Vercel function.
 
 ## Deploy
 
@@ -141,7 +141,9 @@ gcloud run deploy breathewise --source . --region asia-south1 --allow-unauthenti
 ## Project layout
 
 ```
-server.js              request handler, HTTP server, Vercel entry, env options
+server.js              entry point: standalone server and Vercel function
+src/app.js             request handler, HTTP server, options from env
+shared/                profile schema used by both the server and the web app
 src/http/              JSON, static files, limits, security headers
 src/routes/api.js      /api/health, /api/places, /api/plan, /api/ask
 src/air/               Google Air Quality, Open-Meteo, provider with cache + fallback

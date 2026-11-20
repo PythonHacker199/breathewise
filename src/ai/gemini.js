@@ -48,11 +48,15 @@ export function extractText(data) {
   const candidate = data?.candidates?.[0];
   if (!candidate) {
     const reason = data?.promptFeedback?.blockReason;
-    throw new GeminiError(reason ? `Request blocked by safety filters (${reason}).` : 'Gemini returned no candidates.');
+    throw new GeminiError(
+      reason ? `Request blocked by safety filters (${reason}).` : 'Gemini returned no candidates.',
+    );
   }
   const text = visibleText(candidate);
   if (!text.trim()) {
-    throw new GeminiError(`Gemini returned an empty response (finishReason: ${candidate.finishReason ?? 'unknown'}).`);
+    throw new GeminiError(
+      `Gemini returned an empty response (finishReason: ${candidate.finishReason ?? 'unknown'}).`,
+    );
   }
   return text;
 }
@@ -73,7 +77,11 @@ function visibleText(candidate) {
  * @param {ModelRequest} req
  * @returns {Promise<{ res: Response, body: GenerateContentResponse | null }>}
  */
-async function postGenerateContent({ apiKey, fetchImpl, timeoutMs }, model, { system, prompt, generationConfig }) {
+async function postGenerateContent(
+  { apiKey, fetchImpl, timeoutMs },
+  model,
+  { system, prompt, generationConfig },
+) {
   try {
     const res = await fetchImpl(`${API_BASE}/${encodeURIComponent(model)}:generateContent`, {
       method: 'POST',
@@ -106,8 +114,14 @@ async function postGenerateContent({ apiKey, fetchImpl, timeoutMs }, model, { sy
  * @param {GenerateContentResponse | null} body
  */
 function apiError(res, body) {
-  const detail = body?.error ? `${body.error.status ?? ''}: ${String(body.error.message ?? '').slice(0, MAX_DETAIL_CHARS)}` : undefined;
-  return new GeminiError(`Gemini API error (HTTP ${res.status}).`, { status: res.status, detail, retryable: RETRYABLE_STATUS.has(res.status) });
+  const detail = body?.error
+    ? `${body.error.status ?? ''}: ${String(body.error.message ?? '').slice(0, MAX_DETAIL_CHARS)}`
+    : undefined;
+  return new GeminiError(`Gemini API error (HTTP ${res.status}).`, {
+    status: res.status,
+    detail,
+    retryable: RETRYABLE_STATUS.has(res.status),
+  });
 }
 
 /**
@@ -138,7 +152,15 @@ async function generateWithFallback(conn, models, req, log) {
     } catch (err) {
       if (!(err instanceof GeminiError && err.retryable)) throw err;
       lastError = err;
-      log?.warn(JSON.stringify({ severity: 'WARNING', message: 'Gemini model skipped', model, status: err.status ?? null, detail: err.detail ?? err.message }));
+      log?.warn(
+        JSON.stringify({
+          severity: 'WARNING',
+          message: 'Gemini model skipped',
+          model,
+          status: err.status ?? null,
+          detail: err.detail ?? err.message,
+        }),
+      );
     }
   }
   throw lastError;
@@ -178,7 +200,12 @@ export function createGeminiClient({
       const { text, model: used } = await generate({
         system,
         prompt,
-        generationConfig: { responseMimeType: 'application/json', responseSchema: schema, maxOutputTokens, temperature },
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: schema,
+          maxOutputTokens,
+          temperature,
+        },
       });
       try {
         return { data: JSON.parse(text), model: used };

@@ -23,7 +23,8 @@ const AIR_QUALITY_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality';
  * @param {unknown} value
  * @returns {number | null}
  */
-const numberOrNull = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
+const numberOrNull = (value) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 /**
  * Search places by name.
@@ -33,7 +34,9 @@ const numberOrNull = (value) => (typeof value === 'number' && Number.isFinite(va
  */
 export async function searchPlaces(query, options = {}) {
   const url = `${GEOCODING_URL}?${new URLSearchParams({ name: query, count: '6', language: 'en', format: 'json' })}`;
-  const data = /** @type {{ results?: Array<Record<string, unknown>> }} */ (await getJson(url, options));
+  const data = /** @type {{ results?: Array<Record<string, unknown>> }} */ (
+    await getJson(url, options)
+  );
   return (data.results ?? [])
     .filter((r) => typeof r.latitude === 'number' && typeof r.longitude === 'number')
     .map((r) => ({
@@ -62,7 +65,9 @@ export async function fetchOpenMeteoAir({ lat, lon }, options = {}) {
     timeformat: 'unixtime',
     forecast_days: '2',
   });
-  const data = /** @type {OpenMeteoAirResponse | null} */ (await getJson(`${AIR_QUALITY_URL}?${params}`, options));
+  const data = /** @type {OpenMeteoAirResponse | null} */ (
+    await getJson(`${AIR_QUALITY_URL}?${params}`, options)
+  );
   return parseAirResponse(data);
 }
 
@@ -75,7 +80,9 @@ function parseAirResponse(data) {
   const current = data?.current;
   const series = data?.hourly;
   const pm25 = numberOrNull(current?.pm2_5);
-  if (!current || pm25 === null || !Array.isArray(series?.time)) throw new UpstreamError('Open-Meteo returned no PM2.5 data for this location.');
+  if (!current || pm25 === null || !Array.isArray(series?.time)) {
+    throw new UpstreamError('Open-Meteo returned no PM2.5 data for this location.');
+  }
   return {
     source: 'open-meteo',
     timeZone: typeof data?.timezone === 'string' ? data.timezone : 'UTC',
@@ -98,8 +105,15 @@ function parseAirResponse(data) {
  */
 function parseHourly(times, series) {
   return times
-    .map((t, i) => ({ time: new Date(Number(t) * 1000).toISOString(), pm25: numberOrNull(series.pm2_5?.[i]), pm10: numberOrNull(series.pm10?.[i]) }))
-    .filter(/** @returns {h is { time: string, pm25: number, pm10: number | null }} */ (h) => h.pm25 !== null);
+    .map((t, i) => ({
+      time: new Date(Number(t) * 1000).toISOString(),
+      pm25: numberOrNull(series.pm2_5?.[i]),
+      pm10: numberOrNull(series.pm10?.[i]),
+    }))
+    .filter(
+      /** @returns {h is { time: string, pm25: number, pm10: number | null }} */ (h) =>
+        h.pm25 !== null,
+    );
 }
 
 /**

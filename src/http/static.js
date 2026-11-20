@@ -96,7 +96,11 @@ export function serveStatic(files, req, res, pathname) {
   }
   const gzip = file.gzip && acceptsGzip(req) ? file.gzip : null;
   const body = gzip ?? file.body;
-  res.writeHead(200, { ...headers, ...(gzip && { 'Content-Encoding': 'gzip' }), 'Content-Length': body.length });
+  res.writeHead(200, {
+    ...headers,
+    ...(gzip && { 'Content-Encoding': 'gzip' }),
+    'Content-Length': body.length,
+  });
   res.end(req.method === 'HEAD' ? undefined : body);
 }
 

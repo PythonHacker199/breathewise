@@ -5,21 +5,40 @@ import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import serverless, { createApp, createHandler, optionsFromEnv, SECURITY_HEADERS } from '../server.js';
+import serverless, {
+  createApp,
+  createHandler,
+  optionsFromEnv,
+  SECURITY_HEADERS,
+} from '../server.js';
 import { overallAqi } from '../src/science/aqi.js';
-import { NOW, fakeFetch, geminiReply, geocodingFixture, json, openMeteoAirFixture } from './helpers.js';
+import {
+  NOW,
+  fakeFetch,
+  geminiReply,
+  geocodingFixture,
+  json,
+  openMeteoAirFixture,
+} from './helpers.js';
 
 const quiet = { log() {}, warn() {}, error() {} };
 const LOCATION = { lat: 28.65, lon: 77.23, name: 'Delhi', timeZone: 'Asia/Kolkata' };
 const upstream = {
   'geocoding-api': () => json(geocodingFixture()),
   'air-quality-api': () => json(openMeteoAirFixture()),
-  generateContent: () => json(geminiReply('Today PM2.5 is 64.3 µg/m³. It is 50 times worse than ever.')),
+  generateContent: () =>
+    json(geminiReply('Today PM2.5 is 64.3 µg/m³. It is 50 times worse than ever.')),
 };
 
 /** @param {Parameters<typeof createApp>[0]} [options] */
 async function start(options = {}) {
-  const server = await createApp({ now: () => NOW, log: quiet, webDir: null, fetchImpl: fakeFetch(upstream), ...options });
+  const server = await createApp({
+    now: () => NOW,
+    log: quiet,
+    webDir: null,
+    fetchImpl: fakeFetch(upstream),
+    ...options,
+  });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(undefined)));
   const { port } = /** @type {import('node:net').AddressInfo} */ (server.address());
   return { base: `http://127.0.0.1:${port}`, close: () => new Promise((r) => server.close(r)) };
@@ -27,7 +46,11 @@ async function start(options = {}) {
 
 /** @param {string} base @param {string} route @param {unknown} body */
 const post = (base, route, body) =>
-  fetch(`${base}${route}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: typeof body === 'string' ? body : JSON.stringify(body) });
+  fetch(`${base}${route}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+  });
 
 describe('API without Gemini', () => {
   /** @type {Awaited<ReturnType<typeof start>>} */
@@ -39,7 +62,11 @@ describe('API without Gemini', () => {
 
   test('health reports the data sources', async () => {
     const res = await fetch(`${app.base}/api/health`);
-    assert.deepEqual(await res.json(), { status: 'ok', ai: { enabled: false, model: null }, airSource: 'open-meteo' });
+    assert.deepEqual(await res.json(), {
+      status: 'ok',
+      ai: { enabled: false, model: null },
+      airSource: 'open-meteo',
+    });
     for (const name of Object.keys(SECURITY_HEADERS)) assert.ok(res.headers.get(name), name);
   });
 
@@ -62,7 +89,9 @@ describe('API without Gemini', () => {
   });
 
   test('every chart hour carries the EPA category the server computed, so the browser never re-derives it', async () => {
-    const body = await (await post(app.base, '/api/plan', { location: LOCATION, profile: {} })).json();
+    const body = await (
+      await post(app.base, '/api/plan', { location: LOCATION, profile: {} })
+    ).json();
     for (const hour of body.air.hourly) {
       assert.deepEqual(Object.keys(hour).sort(), ['category', 'pm25', 'time']);
       const { key, label, color } = overallAqi({ pm25: hour.pm25 }).category;
@@ -71,7 +100,10 @@ describe('API without Gemini', () => {
   });
 
   test('invalid input lists field errors', async () => {
-    const res = await post(app.base, '/api/plan', { location: { lat: 200 }, profile: { commute: { mode: 'rocket' } } });
+    const res = await post(app.base, '/api/plan', {
+      location: { lat: 200 },
+      profile: { commute: { mode: 'rocket' } },
+    });
     assert.equal(res.status, 400);
     const { errors } = await res.json();
     assert.ok(errors['location.lat']);
@@ -79,13 +111,34 @@ describe('API without Gemini', () => {
   });
 
   test('ask needs Gemini', async () => {
-    assert.equal((await post(app.base, '/api/ask', { location: LOCATION, profile: {}, question: 'Is it safe?' })).status, 503);
+    assert.equal(
+      (
+        await post(app.base, '/api/ask', {
+          location: LOCATION,
+          profile: {},
+          question: 'Is it safe?',
+        })
+      ).status,
+      503,
+    );
   });
 
   test('rejects wrong content type, malformed JSON, oversized bodies and unknown routes', async () => {
-    assert.equal((await fetch(`${app.base}/api/plan`, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: 'x' })).status, 415);
+    assert.equal(
+      (
+        await fetch(`${app.base}/api/plan`, {
+          method: 'POST',
+          headers: { 'content-type': 'text/plain' },
+          body: 'x',
+        })
+      ).status,
+      415,
+    );
     assert.equal((await post(app.base, '/api/plan', '{oops')).status, 400);
-    assert.equal((await post(app.base, '/api/plan', { profile: { notes: 'x'.repeat(20_000) } })).status, 413);
+    assert.equal(
+      (await post(app.base, '/api/plan', { profile: { notes: 'x'.repeat(20_000) } })).status,
+      413,
+    );
     assert.equal((await fetch(`${app.base}/api/nope`)).status, 404);
     assert.equal((await fetch(`${app.base}/api/plan`)).status, 405);
     assert.equal((await fetch(`${app.base}/`, { method: 'DELETE' })).status, 405);
@@ -96,10 +149,18 @@ describe('API with Gemini', () => {
   test('answers are grounded in the plan', async () => {
     const app = await start({ geminiApiKey: 'k', fallbackModels: [] });
     try {
-      const res = await post(app.base, '/api/ask', { location: LOCATION, profile: {}, question: 'How bad is it today?' });
+      const res = await post(app.base, '/api/ask', {
+        location: LOCATION,
+        profile: {},
+        question: 'How bad is it today?',
+      });
       const body = await res.json();
       assert.equal(body.answer, 'Today PM2.5 is 64.3 µg/m³.');
-      assert.equal((await post(app.base, '/api/ask', { location: LOCATION, profile: {}, question: '?' })).status, 400);
+      assert.equal(
+        (await post(app.base, '/api/ask', { location: LOCATION, profile: {}, question: '?' }))
+          .status,
+        400,
+      );
     } finally {
       await app.close();
     }
@@ -142,10 +203,22 @@ describe('static app', () => {
       const page = await fetch(`${app.base}/`, { headers: { 'accept-encoding': 'gzip' } });
       assert.match(await page.text(), /BreatheWise/);
       assert.equal(page.headers.get('content-encoding'), 'gzip');
-      assert.equal((await fetch(`${app.base}/`, { headers: { 'if-none-match': page.headers.get('etag') ?? '' } })).status, 304);
+      assert.equal(
+        (
+          await fetch(`${app.base}/`, {
+            headers: { 'if-none-match': page.headers.get('etag') ?? '' },
+          })
+        ).status,
+        304,
+      );
       assert.match(await (await fetch(`${app.base}/plan`)).text(), /BreatheWise/);
-      assert.match((await fetch(`${app.base}/assets/app-1a2b.js`)).headers.get('cache-control') ?? '', /immutable/);
-      for (const route of ['/missing.js', '/../server.js', '/src/app.js']) assert.equal((await fetch(`${app.base}${route}`)).status, 404, route);
+      assert.match(
+        (await fetch(`${app.base}/assets/app-1a2b.js`)).headers.get('cache-control') ?? '',
+        /immutable/,
+      );
+      for (const route of ['/missing.js', '/../server.js', '/src/app.js']) {
+        assert.equal((await fetch(`${app.base}${route}`)).status, 404, route);
+      }
       // Extension-less paths get the app shell, never a file from disk.
       assert.match(await (await fetch(`${app.base}/.env`)).text(), /BreatheWise/);
     } finally {
@@ -157,8 +230,19 @@ describe('static app', () => {
 
 describe('optionsFromEnv', () => {
   test('reads keys, models and proxy trust', () => {
-    const opts = optionsFromEnv({ GEMINI_API_KEY: ' g ', GOOGLE_AIR_QUALITY_API_KEY: 'a', GEMINI_FALLBACK_MODELS: 'x, ,y', K_SERVICE: 'svc' });
-    assert.deepEqual(opts, { geminiApiKey: 'g', airQualityApiKey: 'a', model: undefined, fallbackModels: ['x', 'y'], trustProxy: true });
+    const opts = optionsFromEnv({
+      GEMINI_API_KEY: ' g ',
+      GOOGLE_AIR_QUALITY_API_KEY: 'a',
+      GEMINI_FALLBACK_MODELS: 'x, ,y',
+      K_SERVICE: 'svc',
+    });
+    assert.deepEqual(opts, {
+      geminiApiKey: 'g',
+      airQualityApiKey: 'a',
+      model: undefined,
+      fallbackModels: ['x', 'y'],
+      trustProxy: true,
+    });
     assert.equal(optionsFromEnv({ GEMINI_API_KEY: '  ' }).geminiApiKey, undefined);
   });
 });
@@ -189,13 +273,25 @@ describe('Vercel deployment', () => {
   test('vercel.json sends the same security headers as the server and ships the built app with the function', async () => {
     const config = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
     const all = config.headers.find((/** @type {{ source: string }} */ h) => h.source === '/(.*)');
-    assert.deepEqual(Object.fromEntries(all.headers.map((/** @type {{ key: string, value: string }} */ h) => [h.key, h.value])), { ...SECURITY_HEADERS });
+    assert.deepEqual(
+      Object.fromEntries(
+        all.headers.map((/** @type {{ key: string, value: string }} */ h) => [h.key, h.value]),
+      ),
+      { ...SECURITY_HEADERS },
+    );
     assert.equal(config.functions['server.js'].includeFiles, 'web/dist/**');
     assert.equal(config.outputDirectory, 'web/dist');
   });
 
   test('the shared handler answers API requests like the standalone server', async () => {
-    await assertHealthy(await createHandler({ now: () => NOW, log: quiet, webDir: null, fetchImpl: fakeFetch(upstream) }));
+    await assertHealthy(
+      await createHandler({
+        now: () => NOW,
+        log: quiet,
+        webDir: null,
+        fetchImpl: fakeFetch(upstream),
+      }),
+    );
   });
 
   test('the default export is a working serverless handler', async () => {

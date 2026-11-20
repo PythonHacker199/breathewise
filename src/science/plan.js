@@ -25,7 +25,13 @@ import { buildActions } from './actions.js';
  */
 export function hasSensitiveMembers(profile) {
   const { household, conditions } = profile;
-  return household.children > 0 || household.olderAdults > 0 || conditions.respiratory || conditions.heart || conditions.pregnancy;
+  return (
+    household.children > 0 ||
+    household.olderAdults > 0 ||
+    conditions.respiratory ||
+    conditions.heart ||
+    conditions.pregnancy
+  );
 }
 
 /**

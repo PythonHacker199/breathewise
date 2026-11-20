@@ -4,6 +4,8 @@ WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY web/ ./
+# The form imports the profile schema shared with the server (../shared from /web).
+COPY shared/ /shared/
 RUN npm run build
 
 # Stage 2: the API server. Zero runtime dependencies, so it is just Node + source + built app.
@@ -15,6 +17,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 COPY --chown=node:node package.json server.js ./
 COPY --chown=node:node src ./src
+COPY --chown=node:node shared ./shared
 COPY --chown=node:node --from=web /web/dist ./web/dist
 
 # Run as the unprivileged user that ships with the official image.

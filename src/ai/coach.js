@@ -18,17 +18,30 @@ import { describeError } from './errors.js';
 export const COACH_SCHEMA = Object.freeze({
   type: 'OBJECT',
   properties: {
-    summary: { type: 'STRING', description: "Two or three sentences: what today's air means for this household." },
+    summary: {
+      type: 'STRING',
+      description: "Two or three sentences: what today's air means for this household.",
+    },
     todayPlan: {
       type: 'ARRAY',
-      description: 'Three to six steps for today in time order, each tied to a routine time from the facts.',
-      items: { type: 'OBJECT', properties: { time: { type: 'STRING' }, action: { type: 'STRING' } }, required: ['time', 'action'] },
+      description:
+        'Three to six steps for today in time order, each tied to a routine time from the facts.',
+      items: {
+        type: 'OBJECT',
+        properties: { time: { type: 'STRING' }, action: { type: 'STRING' } },
+        required: ['time', 'action'],
+      },
     },
-    familyTips: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Two to four tips for the specific people in this household.' },
+    familyTips: {
+      type: 'ARRAY',
+      items: { type: 'STRING' },
+      description: 'Two to four tips for the specific people in this household.',
+    },
     whyItMatters: {
       type: 'ARRAY',
       items: { type: 'STRING' },
-      description: 'Two to four sentences linking a choice to its measured impact, quoting the facts.',
+      description:
+        'Two to four sentences linking a choice to its measured impact, quoting the facts.',
     },
     oneThing: { type: 'STRING', description: 'The single most valuable thing to do today.' },
   },
@@ -81,7 +94,11 @@ export function groundText(text, allowed) {
   // Split after sentence-ending punctuation followed by whitespace, so decimals like 64.3 stay intact.
   return text
     .split(/(?<=[.!?])\s+/)
-    .filter((sentence) => [...sentence.replace(NAMED_TERMS, ' ').matchAll(NUMBER)].every((m) => allowed.has(normaliseNumber(m[0]))))
+    .filter((sentence) =>
+      [...sentence.replace(NAMED_TERMS, ' ').matchAll(NUMBER)].every((m) =>
+        allowed.has(normaliseNumber(m[0])),
+      ),
+    )
     .join(' ')
     .trim();
 }
@@ -91,7 +108,10 @@ export function groundText(text, allowed) {
  * @param {Set<string>} allowed
  */
 function cleanGrounded(value, allowed) {
-  return groundText(cleanText(typeof value === 'string' ? value.replace(/[*_`#]/g, '') : '', MAX.text), allowed);
+  return groundText(
+    cleanText(typeof value === 'string' ? value.replace(/[*_`#]/g, '') : '', MAX.text),
+    allowed,
+  );
 }
 
 /**
@@ -112,7 +132,11 @@ export function buildFacts({ plan, profile, placeName }) {
       localIndex: a.localIndex,
       indoorPm25Estimate: a.indoorEstimate,
     },
-    routine: routine.items.map((i) => ({ when: i.when ?? 'all day', title: i.title, detail: i.detail })),
+    routine: routine.items.map((i) => ({
+      when: i.when ?? 'all day',
+      title: i.title,
+      detail: i.detail,
+    })),
     topActions: plan.actions.slice(0, 6).map((x) => ({ title: x.title, impact: x.impact })),
     commute: { mode: commute.label, kgCo2ePerYear: commute.kgPerYear },
     household: { ...profile.household, ...profile.conditions },
@@ -156,7 +180,9 @@ export function sanitizeCoach(output, allowed) {
     .filter((step) => step.time && step.action)
     .slice(0, MAX.plan);
   const summary = cleanGrounded(raw.summary, allowed);
-  if (!summary || todayPlan.length === 0) throw new Error('Coach output is missing a summary or plan.');
+  if (!summary || todayPlan.length === 0) {
+    throw new Error('Coach output is missing a summary or plan.');
+  }
   return {
     summary,
     todayPlan,
@@ -201,5 +227,10 @@ export async function answerQuestion(facts, question, client) {
   });
   const allowed = allowedNumbers({ facts, question });
   const answer = groundText(text.replace(/[*_`#]/g, '').trim(), allowed).slice(0, 1500);
-  return { answer: answer || "I can only answer with numbers from your plan, and this question needs data I don't have. Try asking it another way.", model };
+  return {
+    answer:
+      answer ||
+      "I can only answer with numbers from your plan, and this question needs data I don't have. Try asking it another way.",
+    model,
+  };
 }

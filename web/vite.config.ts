@@ -9,6 +9,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: { '/api': API_TARGET },
+    // The profile schema lives in ../shared, outside this package.
+    fs: { allow: ['..'] },
   },
   preview: {
     proxy: { '/api': API_TARGET },
@@ -16,6 +18,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
     },
   },
 });

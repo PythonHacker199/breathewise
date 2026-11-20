@@ -1,10 +1,19 @@
-/** Types mirroring the server's JSON (src/science/plan.js, src/ai/coach.js) and a small client. */
+/**
+ * Types of the server's JSON responses (src/science/plan.js, src/ai/coach.js) and a small client.
+ * The profile the browser sends is typed by the shared schema the server validates against.
+ */
+import type { CommuteMode, Profile } from '@shared/profile-schema.js';
 
-export type CategoryKey = 'good' | 'moderate' | 'sensitive' | 'unhealthy' | 'very-unhealthy' | 'hazardous';
-export type CommuteMode = 'car_petrol' | 'car_diesel' | 'car_hybrid' | 'car_electric' | 'motorbike' | 'bus' | 'metro' | 'rail' | 'bicycle' | 'walk' | 'remote';
-export type Ventilation = 'sealed' | 'average' | 'leaky';
-export type CookingFuel = 'lpg' | 'piped_gas' | 'electric' | 'biomass' | 'kerosene';
-export type Heating = 'none' | 'electric' | 'gas' | 'wood_coal' | 'kerosene';
+export type {
+  CommuteMode,
+  CookingFuel,
+  Heating,
+  Profile,
+  Ventilation,
+} from '@shared/profile-schema.js';
+
+export type CategoryKey =
+  'good' | 'moderate' | 'sensitive' | 'unhealthy' | 'very-unhealthy' | 'hazardous';
 
 export interface AqiCategory {
   key: CategoryKey;
@@ -29,15 +38,6 @@ export interface Location {
   lon: number;
   name: string;
   timeZone?: string;
-}
-
-export interface Profile {
-  household: { adults: number; children: number; olderAdults: number };
-  conditions: { respiratory: boolean; heart: boolean; pregnancy: boolean };
-  commute: { mode: CommuteMode; oneWayKm: number; daysPerWeek: number };
-  home: { roomAreaM2: number; ventilation: Ventilation; purifierCadr: number; cookingFuel: CookingFuel; heating: Heating };
-  habits: { outdoorExerciseMinutes: number; incenseOrCoils: boolean; smokingIndoors: boolean };
-  notes: string;
 }
 
 export interface Assessment {
@@ -82,7 +82,13 @@ export interface CommuteSummary {
   label: string;
   kgPerWeek: number;
   kgPerYear: number;
-  alternatives: { mode: CommuteMode; label: string; kgPerYear: number; kgSavedPerYear: number; percentSaved: number }[];
+  alternatives: {
+    mode: CommuteMode;
+    label: string;
+    kgPerYear: number;
+    kgSavedPerYear: number;
+    percentSaved: number;
+  }[];
 }
 
 export interface Coach {
@@ -139,8 +145,12 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new ApiError('Could not reach BreatheWise. Check your connection and try again.', 0);
   }
-  const data = (await res.json().catch(() => ({}))) as { error?: string; errors?: Record<string, string> };
-  if (!res.ok) throw new ApiError(data.error ?? `Request failed (${res.status}).`, res.status, data.errors);
+  const data = (await res.json().catch(() => ({}))) as {
+    error?: string;
+    errors?: Record<string, string>;
+  };
+  if (!res.ok)
+    throw new ApiError(data.error ?? `Request failed (${res.status}).`, res.status, data.errors);
   return data as T;
 }
 
@@ -153,8 +163,13 @@ const postJson = (body: unknown, signal?: AbortSignal): RequestInit => ({
 
 export const api = {
   health: () => request<Health>('/api/health'),
-  places: (query: string, signal?: AbortSignal) => request<{ places: Place[] }>(`/api/places?${new URLSearchParams({ q: query })}`, { signal }),
-  plan: (location: Location, profile: Profile, signal?: AbortSignal) => request<PlanResponse>('/api/plan', postJson({ location, profile }, signal)),
+  places: (query: string, signal?: AbortSignal) =>
+    request<{ places: Place[] }>(`/api/places?${new URLSearchParams({ q: query })}`, { signal }),
+  plan: (location: Location, profile: Profile, signal?: AbortSignal) =>
+    request<PlanResponse>('/api/plan', postJson({ location, profile }, signal)),
   ask: (location: Location, profile: Profile, question: string) =>
-    request<{ answer: string; model: string }>('/api/ask', postJson({ location, profile, question })),
+    request<{ answer: string; model: string }>(
+      '/api/ask',
+      postJson({ location, profile, question }),
+    ),
 };

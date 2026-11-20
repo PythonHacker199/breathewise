@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError, type Location, type PlanResponse, type Profile } from './api';
-import { DEFAULT_PROFILE } from './profile';
+import { STARTER_PROFILE } from './profile';
 
 /**
  * Everything the page needs to collect a location and profile and turn them into a plan:
@@ -8,7 +8,7 @@ import { DEFAULT_PROFILE } from './profile';
  */
 export function usePlan() {
   const [location, setLocation] = useState<Location | null>(null);
-  const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE);
+  const [profile, setProfile] = useState<Profile>(STARTER_PROFILE);
   const [result, setResult] = useState<PlanResponse | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState('');

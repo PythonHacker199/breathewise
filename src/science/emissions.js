@@ -8,9 +8,15 @@
  * occupancy, so the app shows them as estimates and names the source.
  */
 
-/** @typedef {'car_petrol'|'car_diesel'|'car_hybrid'|'car_electric'|'motorbike'|'bus'|'metro'|'rail'|'bicycle'|'walk'|'remote'} CommuteMode */
+import { COMMUTE_OPTIONS } from '../../shared/profile-schema.js';
 
-/** g CO2e per passenger-km. Active travel and working from home have no direct travel emissions. */
+/** @typedef {import('../../shared/profile-schema.js').CommuteMode} CommuteMode */
+
+/**
+ * g CO2e per passenger-km. Active travel and working from home have no direct travel emissions.
+ * Typed as a full Record so TypeScript fails the build if a commute mode has no factor.
+ * @type {Readonly<Record<CommuteMode, number>>}
+ */
 export const GRAMS_CO2E_PER_KM = Object.freeze({
   car_petrol: 170.48,
   car_diesel: 170.82,
@@ -25,23 +31,15 @@ export const GRAMS_CO2E_PER_KM = Object.freeze({
   remote: 0,
 });
 
-/** @type {Readonly<Record<CommuteMode, string>>} */
-export const MODE_LABELS = Object.freeze({
-  car_petrol: 'Petrol car',
-  car_diesel: 'Diesel car',
-  car_hybrid: 'Plug-in hybrid car',
-  car_electric: 'Electric car',
-  motorbike: 'Motorbike or scooter',
-  bus: 'Bus',
-  metro: 'Metro',
-  rail: 'Train',
-  bicycle: 'Bicycle',
-  walk: 'Walking',
-  remote: 'Working from home',
-});
+/** Display label of each commute mode, from the shared profile schema. */
+export const MODE_LABELS = /** @type {Readonly<Record<CommuteMode, string>>} */ (
+  Object.freeze(Object.fromEntries(COMMUTE_OPTIONS.map(({ value, label }) => [value, label])))
+);
 
 /** Modes that put exhaust into the street (electric cars still shed brake and tyre dust). */
-export const TAILPIPE_MODES = Object.freeze(new Set(['car_petrol', 'car_diesel', 'car_hybrid', 'motorbike']));
+export const TAILPIPE_MODES = Object.freeze(
+  new Set(['car_petrol', 'car_diesel', 'car_hybrid', 'motorbike']),
+);
 
 /** Modes where the traveller breathes street air directly. */
 export const EXPOSED_MODES = Object.freeze(new Set(['motorbike', 'bicycle', 'walk']));
@@ -102,7 +100,13 @@ export function commuteAlternatives(commute) {
     .map((mode) => {
       const kgPerYear = commuteEmissions({ ...commute, mode }).kgPerYear;
       const kgSavedPerYear = Math.round((current - kgPerYear) * 10) / 10;
-      return { mode, label: MODE_LABELS[mode], kgPerYear, kgSavedPerYear, percentSaved: Math.round((kgSavedPerYear / current) * 100) };
+      return {
+        mode,
+        label: MODE_LABELS[mode],
+        kgPerYear,
+        kgSavedPerYear,
+        percentSaved: Math.round((kgSavedPerYear / current) * 100),
+      };
     })
     .filter((alt) => alt.kgSavedPerYear > 0)
     .sort((a, b) => b.kgSavedPerYear - a.kgSavedPerYear);

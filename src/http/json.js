@@ -28,7 +28,10 @@ export class HttpError extends Error {
  * @param {unknown} payload
  */
 export function sendJson(res, status, payload) {
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+  });
   res.end(JSON.stringify(payload));
 }
 
@@ -84,7 +87,10 @@ export function sendError(res, err, log) {
   if (res.headersSent) return;
   if (err instanceof HttpError) {
     if (err.status === 429) res.setHeader('Retry-After', String(err.extra.retryAfterSec ?? 60));
-    sendJson(res, err.status, { error: err.message, ...(err.extra.errors ? { errors: err.extra.errors } : {}) });
+    sendJson(res, err.status, {
+      error: err.message,
+      ...(err.extra.errors ? { errors: err.extra.errors } : {}),
+    });
     return;
   }
   log.error(err);

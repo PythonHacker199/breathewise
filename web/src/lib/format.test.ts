@@ -25,7 +25,14 @@ describe('formatTime', () => {
 
 describe('googleCalendarUrl', () => {
   it('builds a TEMPLATE link with UTC dates and encoded text', () => {
-    const url = new URL(googleCalendarUrl('Walk & stretch', '2026-11-19T01:30:00.000Z', '2026-11-19T02:30:00Z', 'Cleanest hour'));
+    const url = new URL(
+      googleCalendarUrl(
+        'Walk & stretch',
+        '2026-11-19T01:30:00.000Z',
+        '2026-11-19T02:30:00Z',
+        'Cleanest hour',
+      ),
+    );
     expect(url.origin).toBe('https://calendar.google.com');
     expect(url.searchParams.get('action')).toBe('TEMPLATE');
     expect(url.searchParams.get('text')).toBe('Walk & stretch');

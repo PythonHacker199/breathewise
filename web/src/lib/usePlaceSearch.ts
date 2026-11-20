@@ -23,7 +23,9 @@ export function usePlaceSearch(onLocate: (location: Location) => void) {
     try {
       const { places } = await api.places(query.trim());
       setResults(places);
-      setStatus(places.length ? `${places.length} places found.` : 'No places found. Try another spelling.');
+      setStatus(
+        places.length ? `${places.length} places found.` : 'No places found. Try another spelling.',
+      );
     } catch (err) {
       setStatus(err instanceof ApiError ? err.message : 'Search failed.');
     }
@@ -38,7 +40,12 @@ export function usePlaceSearch(onLocate: (location: Location) => void) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        onLocate({ lat: pos.coords.latitude, lon: pos.coords.longitude, name: 'Your location', timeZone });
+        onLocate({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          name: 'Your location',
+          timeZone,
+        });
         setStatus('Using your current location.');
       },
       () => setStatus('Location permission was denied. Search for your city instead.'),

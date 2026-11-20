@@ -30,9 +30,13 @@ async function request(url, init, { fetchImpl = fetch, timeoutMs = DEFAULT_TIMEO
     res = await fetchImpl(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
   } catch (err) {
     const timedOut = err instanceof Error && err.name === 'TimeoutError';
-    throw new UpstreamError(timedOut ? `${host} timed out.` : `Could not reach ${host}.`, { cause: err });
+    throw new UpstreamError(timedOut ? `${host} timed out.` : `Could not reach ${host}.`, {
+      cause: err,
+    });
   }
-  if (!res.ok) throw new UpstreamError(`${host} returned HTTP ${res.status}.`, { status: res.status });
+  if (!res.ok) {
+    throw new UpstreamError(`${host} returned HTTP ${res.status}.`, { status: res.status });
+  }
   try {
     return await res.json();
   } catch (err) {
@@ -54,5 +58,13 @@ export function getJson(url, options = {}) {
  * @param {{ headers?: Record<string, string>, fetchImpl?: typeof fetch, timeoutMs?: number }} [options]
  */
 export function postJson(url, body, { headers = {}, ...options } = {}) {
-  return request(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) }, options);
+  return request(
+    url,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify(body),
+    },
+    options,
+  );
 }

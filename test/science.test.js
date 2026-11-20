@@ -1,16 +1,40 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { aqiFromPm10, aqiFromPm25, categoryForAqi, indiaCategoryForPm25, overallAqi, timesWhoGuideline, AQI_CATEGORIES } from '../src/science/aqi.js';
-import { cigarettesPerDay, indoorPm25, inhaledDose, percentReduction, recommendedCadr, roomVolume } from '../src/science/exposure.js';
-import { commuteAlternatives, commuteEmissions, GRAMS_CO2E_PER_KM, isCommuteMode } from '../src/science/emissions.js';
+import {
+  aqiFromPm10,
+  aqiFromPm25,
+  categoryForAqi,
+  indiaCategoryForPm25,
+  overallAqi,
+  timesWhoGuideline,
+  AQI_CATEGORIES,
+} from '../src/science/aqi.js';
+import {
+  cigarettesPerDay,
+  indoorPm25,
+  inhaledDose,
+  percentReduction,
+  recommendedCadr,
+  roomVolume,
+} from '../src/science/exposure.js';
+import {
+  commuteAlternatives,
+  commuteEmissions,
+  GRAMS_CO2E_PER_KM,
+  isCommuteMode,
+} from '../src/science/emissions.js';
 import { buildRoutine, findWindow, localTime, upcomingHours } from '../src/science/routine.js';
 import { buildActions } from '../src/science/actions.js';
 import { buildPlan, hasSensitiveMembers } from '../src/science/plan.js';
 import { DEFAULT_PROFILE } from '../src/validate.js';
 import { NOW, BASE_UNIX, HOUR, pm25At } from './helpers.js';
 
-const hourly = Array.from({ length: 48 }, (_, i) => ({ time: new Date((BASE_UNIX + i * HOUR) * 1000).toISOString(), pm25: pm25At(i), pm10: 90 }));
+const hourly = Array.from({ length: 48 }, (_, i) => ({
+  time: new Date((BASE_UNIX + i * HOUR) * 1000).toISOString(),
+  pm25: pm25At(i),
+  pm10: 90,
+}));
 /** @param {object} [over] */
 const profile = (over = {}) => structuredClone({ ...DEFAULT_PROFILE, ...over });
 
@@ -63,7 +87,9 @@ describe('US EPA AQI (2024 PM2.5 breakpoints)', () => {
   });
 
   test('categories cover 0–500 without gaps', () => {
-    for (let i = 1; i < AQI_CATEGORIES.length; i += 1) assert.equal(AQI_CATEGORIES[i].min, AQI_CATEGORIES[i - 1].max + 1);
+    for (let i = 1; i < AQI_CATEGORIES.length; i += 1) {
+      assert.equal(AQI_CATEGORIES[i].min, AQI_CATEGORIES[i - 1].max + 1);
+    }
     assert.equal(categoryForAqi(0).key, 'good');
     assert.equal(categoryForAqi(101).key, 'sensitive');
     assert.equal(categoryForAqi(500).key, 'hazardous');
@@ -102,7 +128,10 @@ describe('exposure physics', () => {
     assert.equal(volume, 40.5);
     assert.equal(indoorPm25({ outdoorPm25: 100, airExchange: 0.5, roomVolume: volume }), 71.4);
     assert.equal(recommendedCadr(volume), 210);
-    assert.equal(indoorPm25({ outdoorPm25: 100, airExchange: 0.5, roomVolume: volume, cadr: 210 }), 8.5);
+    assert.equal(
+      indoorPm25({ outdoorPm25: 100, airExchange: 0.5, roomVolume: volume, cadr: 210 }),
+      8.5,
+    );
     assert.throws(() => indoorPm25({ outdoorPm25: 1, airExchange: 1, roomVolume: 0 }), RangeError);
   });
 
@@ -124,9 +153,19 @@ describe('travel emissions (DESNZ 2022 factors)', () => {
   });
 
   test('round-trip commute emissions', () => {
-    assert.deepEqual(commuteEmissions({ mode: 'car_petrol', oneWayKm: 10, daysPerWeek: 5 }), { kgPerWeek: 17, kgPerYear: 886.5 });
-    assert.equal(commuteEmissions({ mode: 'car_petrol', oneWayKm: 10, daysPerWeek: 5, occupants: 2 }).kgPerYear, 443.2);
-    assert.equal(commuteEmissions({ mode: 'bus', oneWayKm: 10, daysPerWeek: 5, occupants: 4 }).kgPerYear, 501.8);
+    assert.deepEqual(commuteEmissions({ mode: 'car_petrol', oneWayKm: 10, daysPerWeek: 5 }), {
+      kgPerWeek: 17,
+      kgPerYear: 886.5,
+    });
+    assert.equal(
+      commuteEmissions({ mode: 'car_petrol', oneWayKm: 10, daysPerWeek: 5, occupants: 2 })
+        .kgPerYear,
+      443.2,
+    );
+    assert.equal(
+      commuteEmissions({ mode: 'bus', oneWayKm: 10, daysPerWeek: 5, occupants: 4 }).kgPerYear,
+      501.8,
+    );
   });
 
   test('alternatives are ranked by savings and realistic for the distance', () => {
@@ -135,7 +174,11 @@ describe('travel emissions (DESNZ 2022 factors)', () => {
     assert.equal(alts[0].kgSavedPerYear, 741.9);
     assert.equal(alts[0].percentSaved, 84);
     assert.ok(!alts.some((a) => a.mode === 'bicycle' || a.mode === 'walk'));
-    assert.ok(commuteAlternatives({ mode: 'car_petrol', oneWayKm: 2, daysPerWeek: 5 }).some((a) => a.mode === 'walk'));
+    assert.ok(
+      commuteAlternatives({ mode: 'car_petrol', oneWayKm: 2, daysPerWeek: 5 }).some(
+        (a) => a.mode === 'walk',
+      ),
+    );
     assert.deepEqual(commuteAlternatives({ mode: 'walk', oneWayKm: 1, daysPerWeek: 5 }), []);
   });
 });
@@ -161,7 +204,13 @@ describe('daily routine', () => {
   });
 
   test('routine quantifies the exercise-timing benefit and flags sensitive members', () => {
-    const routine = buildRoutine({ hourly, timeZone: 'Asia/Kolkata', now: NOW, exerciseMinutes: 30, hasSensitiveMembers: true });
+    const routine = buildRoutine({
+      hourly,
+      timeZone: 'Asia/Kolkata',
+      now: NOW,
+      exerciseMinutes: 30,
+      hasSensitiveMembers: true,
+    });
     assert.equal(routine.exerciseDoseSavedUg, 104); // 150 × 1.6 × 0.5 − 20 × 1.6 × 0.5
     assert.deepEqual(
       routine.items.map((i) => i.id),
@@ -171,7 +220,13 @@ describe('daily routine', () => {
 
   test('very polluted days move exercise indoors and keep windows shut', () => {
     const smog = hourly.map((h) => ({ ...h, pm25: 180 }));
-    const routine = buildRoutine({ hourly: smog, timeZone: 'Asia/Kolkata', now: NOW, exerciseMinutes: 30, hasSensitiveMembers: false });
+    const routine = buildRoutine({
+      hourly: smog,
+      timeZone: 'Asia/Kolkata',
+      now: NOW,
+      exerciseMinutes: 30,
+      hasSensitiveMembers: false,
+    });
     assert.deepEqual(
       routine.items.map((i) => i.id),
       ['exercise-indoors', 'keep-closed', 'avoid-peak'],
@@ -179,7 +234,16 @@ describe('daily routine', () => {
   });
 
   test('no forecast means no routine', () => {
-    assert.deepEqual(buildRoutine({ hourly: [], timeZone: 'UTC', now: NOW, exerciseMinutes: 0, hasSensitiveMembers: false }).items, []);
+    assert.deepEqual(
+      buildRoutine({
+        hourly: [],
+        timeZone: 'UTC',
+        now: NOW,
+        exerciseMinutes: 0,
+        hasSensitiveMembers: false,
+      }).items,
+      [],
+    );
   });
 });
 
@@ -193,7 +257,11 @@ describe('personalised actions', () => {
   });
 
   test('an adequate purifier gets a "keep it running" action instead', () => {
-    const actions = buildActions({ outdoorPm25: 100, level: 3, profile: profile({ home: { ...DEFAULT_PROFILE.home, purifierCadr: 300 } }) });
+    const actions = buildActions({
+      outdoorPm25: 100,
+      level: 3,
+      profile: profile({ home: { ...DEFAULT_PROFILE.home, purifierCadr: 300 } }),
+    });
     assert.ok(actions.some((a) => a.id === 'purifier-run'));
     assert.ok(!actions.some((a) => a.id === 'diy-filter'));
   });
@@ -204,9 +272,13 @@ describe('personalised actions', () => {
       habits: { outdoorExerciseMinutes: 0, incenseOrCoils: true, smokingIndoors: true },
     });
     const ids = buildActions({ outdoorPm25: 100, level: 3, profile: risky }).map((a) => a.id);
-    for (const id of ['clean-cooking', 'clean-heating', 'coils', 'smoking']) assert.ok(ids.includes(id), id);
+    for (const id of ['clean-cooking', 'clean-heating', 'coils', 'smoking']) {
+      assert.ok(ids.includes(id), id);
+    }
     const clean = buildActions({ outdoorPm25: 5, level: 0, profile: profile() }).map((a) => a.id);
-    for (const id of ['clean-cooking', 'clean-heating', 'coils', 'smoking', 'mask', 'windows']) assert.ok(!clean.includes(id), id);
+    for (const id of ['clean-cooking', 'clean-heating', 'coils', 'smoking', 'mask', 'windows']) {
+      assert.ok(!clean.includes(id), id);
+    }
   });
 
   test('on a clean-air day the purifier is framed as smog-day preparation, not the top priority', () => {
@@ -217,7 +289,9 @@ describe('personalised actions', () => {
   });
 
   test('actions are sorted by priority', () => {
-    const priorities = buildActions({ outdoorPm25: 100, level: 3, profile: profile() }).map((a) => a.priority);
+    const priorities = buildActions({ outdoorPm25: 100, level: 3, profile: profile() }).map(
+      (a) => a.priority,
+    );
     assert.deepEqual(
       [...priorities].sort((a, b) => b - a),
       priorities,
@@ -247,11 +321,22 @@ describe('plan', () => {
 
   test('sensitive members are detected from household and conditions', () => {
     assert.equal(hasSensitiveMembers(profile()), false);
-    assert.equal(hasSensitiveMembers(profile({ household: { adults: 2, children: 1, olderAdults: 0 } })), true);
-    assert.equal(hasSensitiveMembers(profile({ conditions: { respiratory: true, heart: false, pregnancy: false } })), true);
+    assert.equal(
+      hasSensitiveMembers(profile({ household: { adults: 2, children: 1, olderAdults: 0 } })),
+      true,
+    );
+    assert.equal(
+      hasSensitiveMembers(
+        profile({ conditions: { respiratory: true, heart: false, pregnancy: false } }),
+      ),
+      true,
+    );
   });
 
   test('is deterministic', () => {
-    assert.deepEqual(buildPlan({ air, profile: profile(), now: NOW }), buildPlan({ air, profile: profile(), now: NOW }));
+    assert.deepEqual(
+      buildPlan({ air, profile: profile(), now: NOW }),
+      buildPlan({ air, profile: profile(), now: NOW }),
+    );
   });
 });

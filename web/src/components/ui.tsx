@@ -1,18 +1,44 @@
 import type { ReactNode } from 'react';
+import type { NumberRange } from '@shared/profile-schema.js';
 
-export function Card({ children, className = '', labelledBy }: { children: ReactNode; className?: string; labelledBy?: string }) {
+export function Card({
+  children,
+  className = '',
+  labelledBy,
+}: {
+  children: ReactNode;
+  className?: string;
+  labelledBy?: string;
+}) {
   return (
-    <section aria-labelledby={labelledBy} className={`rounded-2xl border border-haze-200 bg-white p-6 shadow-sm max-sm:p-5 ${className}`}>
+    <section
+      aria-labelledby={labelledBy}
+      className={`rounded-2xl border border-haze-200 bg-white p-6 shadow-sm max-sm:p-5 ${className}`}
+    >
       {children}
     </section>
   );
 }
 
-export function CardTitle({ id, children, icon }: { id: string; children: ReactNode; icon?: ReactNode }) {
+export function CardTitle({
+  id,
+  children,
+  icon,
+}: {
+  id: string;
+  children: ReactNode;
+  icon?: ReactNode;
+}) {
   return (
-    <h2 id={id} className="mb-4 flex items-center gap-2.5 font-display text-xl font-semibold text-ink">
+    <h2
+      id={id}
+      className="mb-4 flex items-center gap-2.5 font-display text-xl font-semibold text-ink"
+    >
       {icon && (
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-haze-100 text-leaf-700" aria-hidden="true">
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-haze-100 text-leaf-700"
+          aria-hidden="true"
+        >
           {icon}
         </span>
       )}
@@ -29,18 +55,29 @@ interface FieldProps {
   label: string;
   hint?: string;
   error?: string;
-  children: (props: { id: string; className: string; 'aria-invalid': boolean; 'aria-describedby'?: string }) => ReactNode;
+  children: (props: {
+    id: string;
+    className: string;
+    'aria-invalid': boolean;
+    'aria-describedby'?: string;
+  }) => ReactNode;
 }
 
 /** Label, control, hint and error wired together for screen readers. */
 export function Field({ id, label, hint, error, children }: FieldProps) {
-  const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined;
+  const describedBy =
+    [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined;
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-sm font-semibold text-ink">
         {label}
       </label>
-      {children({ id, className: CONTROL, 'aria-invalid': Boolean(error), 'aria-describedby': describedBy })}
+      {children({
+        id,
+        className: CONTROL,
+        'aria-invalid': Boolean(error),
+        'aria-describedby': describedBy,
+      })}
       {hint && (
         <p id={`${id}-hint`} className="text-xs text-ink-faint">
           {hint}
@@ -70,7 +107,14 @@ interface SelectFieldProps<T extends string> {
 }
 
 /** A labelled <select> whose value is one of a fixed set of options. */
-export function SelectField<T extends string>({ id, label, value, options, onChange, error }: SelectFieldProps<T>) {
+export function SelectField<T extends string>({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+  error,
+}: SelectFieldProps<T>) {
   return (
     <Field id={id} label={label} error={error}>
       {(props) => (
@@ -90,16 +134,15 @@ interface NumberFieldProps {
   id: string;
   label: string;
   value: number;
-  min: number;
-  max: number;
-  step?: number;
+  /** Accepted range, from the shared profile schema, so the input and the server agree. */
+  range: NumberRange;
   hint?: string;
   error?: string;
   onChange: (value: number) => void;
 }
 
 /** A labelled number input; an emptied field reads as 0 so the form never holds NaN. */
-export function NumberField({ id, label, value, min, max, step = 1, hint, error, onChange }: NumberFieldProps) {
+export function NumberField({ id, label, value, range, hint, error, onChange }: NumberFieldProps) {
   return (
     <Field id={id} label={label} hint={hint} error={error}>
       {(props) => (
@@ -107,9 +150,9 @@ export function NumberField({ id, label, value, min, max, step = 1, hint, error,
           {...props}
           type="number"
           inputMode="decimal"
-          min={min}
-          max={max}
-          step={step}
+          min={range.min}
+          max={range.max}
+          step={range.step ?? 1}
           value={String(value)}
           onChange={(e) => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
         />
@@ -118,13 +161,29 @@ export function NumberField({ id, label, value, min, max, step = 1, hint, error,
   );
 }
 
-export function Checkbox({ id, label, checked, onChange }: { id: string; label: string; checked: boolean; onChange: (value: boolean) => void }) {
+export function Checkbox({
+  id,
+  label,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
   return (
     <label
       htmlFor={id}
       className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-haze-200 px-3 py-2 text-sm font-medium text-ink hover:bg-haze-50"
     >
-      <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-5 w-5 accent-leaf-700" />
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-5 w-5 accent-leaf-700"
+      />
       {label}
     </label>
   );

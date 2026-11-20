@@ -18,7 +18,12 @@
 export const CIGARETTE_PM25_UG_M3 = 22;
 
 /** Typical whole-home air exchange rates (per hour) with windows closed, and with windows open. */
-export const AIR_EXCHANGE_PER_HOUR = Object.freeze({ sealed: 0.3, average: 0.5, leaky: 1.0, windowsOpen: 5.0 });
+export const AIR_EXCHANGE_PER_HOUR = Object.freeze({
+  sealed: 0.3,
+  average: 0.5,
+  leaky: 1.0,
+  windowsOpen: 5.0,
+});
 
 /** Fraction of outdoor fine particles that get through the building shell (conservative). */
 export const PENETRATION = 1.0;
