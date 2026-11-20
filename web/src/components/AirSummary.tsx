@@ -41,7 +41,11 @@ export function AirSummary({ assessment, placeName }: { assessment: Assessment; 
       <dl className="mt-5 grid gap-3 sm:grid-cols-3">
         <Stat label="PM2.5" value={`${assessment.pm25} µg/m³`} note={`${assessment.whoMultiple}× the WHO 24-hour guideline`} />
         <Stat label="Like smoking" value={`${assessment.cigarettesPerDay} cigarettes`} note="a day, if breathed outdoors all day" />
-        <Stat label="Your main room" value={`≈ ${assessment.indoorEstimate} µg/m³`} note={`with windows shut (${assessment.indoorCigarettesPerDay} cigarettes a day)`} />
+        <Stat
+          label="Your main room"
+          value={`≈ ${assessment.indoorEstimate} µg/m³`}
+          note={`with windows shut (${assessment.indoorCigarettesPerDay} cigarettes a day)`}
+        />
       </dl>
 
       <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-muted">
@@ -58,8 +62,8 @@ export function AirSummary({ assessment, placeName }: { assessment: Assessment; 
         </li>
       </ul>
       <p className="mt-3 text-xs text-ink-faint">
-        Data: {SOURCE_LABEL[assessment.source]}. The US AQI is computed with the EPA&apos;s 2024 breakpoints from the latest hourly PM2.5, so it shows what the day looks like if
-        the air stays this way.
+        Data: {SOURCE_LABEL[assessment.source]}. The US AQI is computed with the EPA&apos;s 2024 breakpoints from the latest hourly PM2.5, so it shows what the
+        day looks like if the air stays this way.
       </p>
     </Card>
   );

@@ -82,27 +82,50 @@ export async function loadSite({ webDir, log }) {
  * @param {string} pathname
  */
 export function serveStatic(files, req, res, pathname) {
-  const isAppRoute = !path.posix.extname(pathname);
-  const file = files.get(pathname.endsWith('/') ? `${pathname}index.html` : pathname) ?? (isAppRoute ? files.get('/index.html') : undefined);
+  const file = resolveFile(files, pathname);
   if (!file) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not found');
     return;
   }
-  const headers = {
-    'Content-Type': file.type,
-    ETag: file.etag,
-    // Hashed build assets can be cached forever; everything else revalidates (a 304 when unchanged).
-    'Cache-Control': file.immutable ? `public, max-age=${ONE_YEAR_SECONDS}, immutable` : 'no-cache',
-    Vary: 'Accept-Encoding',
-  };
+  const headers = cacheHeaders(file);
   if (req.headers['if-none-match'] === file.etag) {
     res.writeHead(304, headers);
     res.end();
     return;
   }
-  const gzip = file.gzip && /\bgzip\b/.test(String(req.headers['accept-encoding'] ?? '')) ? file.gzip : null;
+  const gzip = file.gzip && acceptsGzip(req) ? file.gzip : null;
   const body = gzip ?? file.body;
-  res.writeHead(200, { ...headers, ...(gzip ? { 'Content-Encoding': 'gzip' } : {}), 'Content-Length': body.length });
+  res.writeHead(200, { ...headers, ...(gzip && { 'Content-Encoding': 'gzip' }), 'Content-Length': body.length });
   res.end(req.method === 'HEAD' ? undefined : body);
 }
+
+/**
+ * The file for a URL path: directories map to their index.html, and extension-less paths that
+ * match no file are app routes, answered with the single-page app's index.html.
+ * @param {StaticFiles} files
+ * @param {string} pathname
+ * @returns {StaticFile | undefined}
+ */
+function resolveFile(files, pathname) {
+  const exact = files.get(pathname.endsWith('/') ? `${pathname}index.html` : pathname);
+  if (exact) return exact;
+  const isAppRoute = !path.posix.extname(pathname);
+  return isAppRoute ? files.get('/index.html') : undefined;
+}
+
+/**
+ * Hashed build assets can be cached forever; everything else revalidates (a 304 when unchanged).
+ * @param {StaticFile} file
+ */
+function cacheHeaders(file) {
+  return {
+    'Content-Type': file.type,
+    ETag: file.etag,
+    'Cache-Control': file.immutable ? `public, max-age=${ONE_YEAR_SECONDS}, immutable` : 'no-cache',
+    Vary: 'Accept-Encoding',
+  };
+}
+
+/** @param {import('node:http').IncomingMessage} req */
+const acceptsGzip = (req) => /\bgzip\b/.test(String(req.headers['accept-encoding'] ?? ''));

@@ -62,27 +62,51 @@ export async function fetchOpenMeteoAir({ lat, lon }, options = {}) {
     timeformat: 'unixtime',
     forecast_days: '2',
   });
-  const data = /** @type {any} */ (await getJson(`${AIR_QUALITY_URL}?${params}`, options));
-  const pm25 = numberOrNull(data?.current?.pm2_5);
-  if (pm25 === null || !Array.isArray(data?.hourly?.time)) throw new UpstreamError('Open-Meteo returned no PM2.5 data for this location.');
+  const data = /** @type {OpenMeteoAirResponse | null} */ (await getJson(`${AIR_QUALITY_URL}?${params}`, options));
+  return parseAirResponse(data);
+}
 
-  /** @type {number[]} */
-  const times = data.hourly.time;
-  const hourly = times
-    .map((t, i) => ({ time: new Date(t * 1000).toISOString(), pm25: numberOrNull(data.hourly.pm2_5?.[i]), pm10: numberOrNull(data.hourly.pm10?.[i]) }))
-    .filter(/** @returns {h is { time: string, pm25: number, pm10: number | null }} */ (h) => h.pm25 !== null);
-
+/**
+ * Turn a raw response into AirData, rejecting one with no current PM2.5 or no hourly series.
+ * @param {OpenMeteoAirResponse | null} data
+ * @returns {import('../science/plan.js').AirData}
+ */
+function parseAirResponse(data) {
+  const current = data?.current;
+  const series = data?.hourly;
+  const pm25 = numberOrNull(current?.pm2_5);
+  if (!current || pm25 === null || !Array.isArray(series?.time)) throw new UpstreamError('Open-Meteo returned no PM2.5 data for this location.');
   return {
     source: 'open-meteo',
-    timeZone: typeof data.timezone === 'string' ? data.timezone : 'UTC',
+    timeZone: typeof data?.timezone === 'string' ? data.timezone : 'UTC',
     current: {
-      time: new Date(Number(data.current.time) * 1000).toISOString(),
+      time: new Date(Number(current.time) * 1000).toISOString(),
       pm25,
-      pm10: numberOrNull(data.current.pm10),
-      no2: numberOrNull(data.current.nitrogen_dioxide),
-      o3: numberOrNull(data.current.ozone),
+      pm10: numberOrNull(current.pm10),
+      no2: numberOrNull(current.nitrogen_dioxide),
+      o3: numberOrNull(current.ozone),
     },
-    hourly,
+    hourly: parseHourly(series.time, series),
     localIndex: null,
   };
 }
+
+/**
+ * Hourly readings with a PM2.5 value; hours the model has not filled in are dropped.
+ * @param {unknown[]} times unix seconds
+ * @param {{ pm2_5?: unknown[], pm10?: unknown[] }} series values aligned with `times`
+ */
+function parseHourly(times, series) {
+  return times
+    .map((t, i) => ({ time: new Date(Number(t) * 1000).toISOString(), pm25: numberOrNull(series.pm2_5?.[i]), pm10: numberOrNull(series.pm10?.[i]) }))
+    .filter(/** @returns {h is { time: string, pm25: number, pm10: number | null }} */ (h) => h.pm25 !== null);
+}
+
+/**
+ * The fields of an Open-Meteo air-quality response this module reads. Values are untrusted,
+ * so each one still goes through numberOrNull.
+ * @typedef {object} OpenMeteoAirResponse
+ * @property {unknown} [timezone]
+ * @property {{ time?: unknown, pm2_5?: unknown, pm10?: unknown, nitrogen_dioxide?: unknown, ozone?: unknown }} [current]
+ * @property {{ time?: unknown[], pm2_5?: unknown[], pm10?: unknown[] }} [hourly]
+ */

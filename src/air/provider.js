@@ -32,7 +32,12 @@ export function createAirProvider({ googleApiKey, fetchImpl, now = () => new Dat
     let air;
     if (googleApiKey) {
       try {
-        const timeZone = location.timeZone ?? (await openMeteo.then((d) => d.timeZone, () => 'UTC'));
+        const timeZone =
+          location.timeZone ??
+          (await openMeteo.then(
+            (d) => d.timeZone,
+            () => 'UTC',
+          ));
         air = await fetchGoogleAir(location, { apiKey: googleApiKey, timeZone, now: now(), fetchImpl });
         if (air.hourly.length === 0) throw new UpstreamError('Google Air Quality returned no forecast.');
       } catch (err) {

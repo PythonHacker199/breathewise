@@ -1,9 +1,9 @@
 import js from '@eslint/js';
 import globals from 'globals';
 
-/** Lint rules for the server, its tests and the classic planner. The React app in web/ has its own config. */
+/** Lint rules for the server and its tests. The React app in web/ has its own config. */
 export default [
-  { ignores: ['web/**', 'node_modules/**'] },
+  { ignores: ['web/**', 'node_modules/**', 'coverage/**'] },
   js.configs.recommended,
   {
     files: ['**/*.js'],
@@ -27,7 +27,14 @@ export default [
     },
   },
   {
-    files: ['public/**/*.js'],
-    languageOptions: { globals: { ...globals.browser } },
+    // Keep application code in small, single-purpose functions.
+    files: ['server.js', 'src/**/*.js'],
+    rules: {
+      complexity: ['error', 10],
+      'max-depth': ['error', 3],
+      'max-params': ['error', 4],
+      'max-statements': ['error', 20],
+      'max-lines-per-function': ['error', { max: 50, skipBlankLines: true, skipComments: true }],
+    },
   },
 ];

@@ -72,6 +72,7 @@ Google's NO₂ and O₃ values (ppb) are converted to µg/m³ at 25 °C (× 46.0
 - AQI categories are always named in text; colour is never the only signal, and text colour is picked for WCAG contrast against the EPA colours.
 - The forecast chart has a text summary and a full data table.
 - Status messages use `aria-live`, alerts use `role="alert"`, focus moves to the results when the plan is ready, and new-tab links say so.
+- **Tested automatically:** every component, and the whole page after a plan is built, is audited with [axe-core](https://github.com/dequelabs/axe-core) against WCAG 2.2 AA on every push, and a guard test proves the audit really catches violations.
 
 ## Run locally
 
@@ -103,7 +104,19 @@ Open http://localhost:8788. For live-reloading UI work, run `npm run dev:web` in
 npm run check
 ```
 
-This runs ESLint, strict TypeScript (`checkJs` on the server, `strict` on the web), the node:test suite (science, validation, air providers, the coach's grounding filter, and server security headers, limits and routes) and the Vitest suite for the UI. The same steps run in GitHub Actions on every push.
+This runs, in order, and the same steps run in GitHub Actions on every push:
+
+- **Prettier** formatting check.
+- **ESLint** with enforced maintainability limits on application code: cyclomatic complexity ≤ 10, nesting depth ≤ 3, functions of at most 50 lines (60 for React components), and at most 4 parameters per server function.
+- **Strict TypeScript**: `checkJs` with JSDoc types on the server, `strict` on the web app, and no `any`.
+- **71 server tests** (node:test): AQI breakpoints, exposure and emission maths, the routine and action rules, validation, both air providers, the Gemini client's fallback and the coach's number-grounding filter, and the HTTP layer (security headers, rate limits, body limits, static files, Vercel entry).
+- **27 web tests** (Vitest + Testing Library): component behaviour, a full user journey with a fake backend (search, pick the right Delhi, build a plan, focus moves to the results, server field errors shown on the right input), and axe-core accessibility audits.
+
+### Design notes
+
+- **Rules, not branches.** Each personalised action in `src/science/actions.js` is a small rule that returns an action or `null`; `buildActions` runs them all and sorts by priority. Adding an action means adding one rule.
+- **One source of truth.** AQI categories, levels and colours live in `src/science/aqi.js`; the API sends each forecast hour's category, so the browser never re-implements the EPA bands.
+- **Shared handler.** `createHandler` in `server.js` serves the same app as a standalone Node server (Docker, Cloud Run) and as a Vercel function.
 
 ## Deploy
 
@@ -132,10 +145,10 @@ server.js              request handler, HTTP server, Vercel entry, env options
 src/http/              JSON, static files, limits, security headers
 src/routes/api.js      /api/health, /api/places, /api/plan, /api/ask
 src/air/               Google Air Quality, Open-Meteo, provider with cache + fallback
-src/science/           aqi, exposure, routine, actions, emissions, plan
+src/science/           aqi, exposure, routine, actions (rules), sources, emissions, plan
 src/ai/                Gemini client, coach prompts, number grounding
 src/validate.js        profile, location and question validation
-web/                   React + TypeScript + Tailwind UI
+web/                   React + TypeScript + Tailwind UI (components, lib hooks, tests)
 test/                  node:test suites
 ```
 

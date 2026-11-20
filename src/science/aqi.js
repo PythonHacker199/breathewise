@@ -23,14 +23,17 @@
  * @property {number} level 0 (good) to 5 (hazardous), for comparisons
  */
 
+/** Category levels by name, so rules read `level >= AQI_LEVEL.SENSITIVE` instead of a bare number. */
+export const AQI_LEVEL = Object.freeze({ GOOD: 0, MODERATE: 1, SENSITIVE: 2, UNHEALTHY: 3, VERY_UNHEALTHY: 4, HAZARDOUS: 5 });
+
 /** @type {ReadonlyArray<AqiCategory>} */
 export const AQI_CATEGORIES = Object.freeze([
-  { key: 'good', label: 'Good', min: 0, max: 50, color: '#00e400', level: 0 },
-  { key: 'moderate', label: 'Moderate', min: 51, max: 100, color: '#ffff00', level: 1 },
-  { key: 'sensitive', label: 'Unhealthy for Sensitive Groups', min: 101, max: 150, color: '#ff7e00', level: 2 },
-  { key: 'unhealthy', label: 'Unhealthy', min: 151, max: 200, color: '#ff0000', level: 3 },
-  { key: 'very-unhealthy', label: 'Very Unhealthy', min: 201, max: 300, color: '#8f3f97', level: 4 },
-  { key: 'hazardous', label: 'Hazardous', min: 301, max: 500, color: '#7e0023', level: 5 },
+  { key: 'good', label: 'Good', min: 0, max: 50, color: '#00e400', level: AQI_LEVEL.GOOD },
+  { key: 'moderate', label: 'Moderate', min: 51, max: 100, color: '#ffff00', level: AQI_LEVEL.MODERATE },
+  { key: 'sensitive', label: 'Unhealthy for Sensitive Groups', min: 101, max: 150, color: '#ff7e00', level: AQI_LEVEL.SENSITIVE },
+  { key: 'unhealthy', label: 'Unhealthy', min: 151, max: 200, color: '#ff0000', level: AQI_LEVEL.UNHEALTHY },
+  { key: 'very-unhealthy', label: 'Very Unhealthy', min: 201, max: 300, color: '#8f3f97', level: AQI_LEVEL.VERY_UNHEALTHY },
+  { key: 'hazardous', label: 'Hazardous', min: 301, max: 500, color: '#7e0023', level: AQI_LEVEL.HAZARDOUS },
 ]);
 
 /** [concentration low, concentration high, AQI low, AQI high] */

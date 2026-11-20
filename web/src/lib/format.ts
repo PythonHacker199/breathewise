@@ -22,7 +22,11 @@ export function formatTime(iso: string, timeZone: string): string {
 
 /** Google Calendar event template for a time window (UTC instants). */
 export function googleCalendarUrl(title: string, startIso: string, endIso: string, details: string): string {
-  const stamp = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const stamp = (iso: string) =>
+    new Date(iso)
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d{3}/, '');
   const params = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${stamp(startIso)}/${stamp(endIso)}`, details });
   return `https://calendar.google.com/calendar/render?${params}`;
 }

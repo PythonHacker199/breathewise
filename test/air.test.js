@@ -34,7 +34,14 @@ describe('Open-Meteo', () => {
       return true;
     });
     await assert.rejects(fetchOpenMeteoAir(DELHI, { fetchImpl: fakeFetch({ 'air-quality-api': () => json({ current: {} }) }) }), UpstreamError);
-    await assert.rejects(fetchOpenMeteoAir(DELHI, { fetchImpl: async () => { throw new TypeError('offline'); } }), /Could not reach/);
+    await assert.rejects(
+      fetchOpenMeteoAir(DELHI, {
+        fetchImpl: async () => {
+          throw new TypeError('offline');
+        },
+      }),
+      /Could not reach/,
+    );
   });
 });
 

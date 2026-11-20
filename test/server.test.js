@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import serverless, { createApp, createHandler, optionsFromEnv, SECURITY_HEADERS } from '../server.js';
+import { overallAqi } from '../src/science/aqi.js';
 import { NOW, fakeFetch, geminiReply, geocodingFixture, json, openMeteoAirFixture } from './helpers.js';
 
 const quiet = { log() {}, warn() {}, error() {} };
@@ -31,7 +32,9 @@ const post = (base, route, body) =>
 describe('API without Gemini', () => {
   /** @type {Awaited<ReturnType<typeof start>>} */
   let app;
-  before(async () => { app = await start(); });
+  before(async () => {
+    app = await start();
+  });
   after(() => app.close());
 
   test('health reports the data sources', async () => {
@@ -56,6 +59,15 @@ describe('API without Gemini', () => {
     assert.equal(body.air.hourly.length, 24);
     assert.equal(body.coach.source, 'curated');
     assert.equal(body.place.name, 'Delhi');
+  });
+
+  test('every chart hour carries the EPA category the server computed, so the browser never re-derives it', async () => {
+    const body = await (await post(app.base, '/api/plan', { location: LOCATION, profile: {} })).json();
+    for (const hour of body.air.hourly) {
+      assert.deepEqual(Object.keys(hour).sort(), ['category', 'pm25', 'time']);
+      const { key, label, color } = overallAqi({ pm25: hour.pm25 }).category;
+      assert.deepEqual(hour.category, { key, label, color });
+    }
   });
 
   test('invalid input lists field errors', async () => {

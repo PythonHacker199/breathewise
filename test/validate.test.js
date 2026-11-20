@@ -34,7 +34,13 @@ describe('profile validation', () => {
     });
     assert.equal(result.ok, false);
     assert.deepEqual(Object.keys(result.errors).sort(), [
-      'commute.daysPerWeek', 'commute.mode', 'conditions.heart', 'home.roomAreaM2', 'home.ventilation', 'household.adults', 'household.children',
+      'commute.daysPerWeek',
+      'commute.mode',
+      'conditions.heart',
+      'home.roomAreaM2',
+      'home.ventilation',
+      'household.adults',
+      'household.children',
     ]);
   });
 

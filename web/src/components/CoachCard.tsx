@@ -53,7 +53,9 @@ export function CoachCard({ coach }: { coach: Coach }) {
           </ul>
         </>
       )}
-      <p className="mt-4 text-xs text-ink-faint">The coach can only quote numbers from your plan; any sentence with a number it made up is removed. Not medical advice.</p>
+      <p className="mt-4 text-xs text-ink-faint">
+        The coach can only quote numbers from your plan; any sentence with a number it made up is removed. Not medical advice.
+      </p>
     </Card>
   );
 }

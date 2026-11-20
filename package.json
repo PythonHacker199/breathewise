@@ -16,17 +16,20 @@
     "setup": "npm ci && npm --prefix web ci",
     "build": "npm --prefix web run build",
     "lint": "eslint . && npm --prefix web run lint",
+    "format": "prettier --write \"**/*.{js,ts,tsx,json,css,html,yml}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,tsx,json,css,html,yml}\"",
     "typecheck": "tsc -p tsconfig.json && npm --prefix web run typecheck",
     "test": "node --test \"test/**/*.test.js\"",
     "test:web": "npm --prefix web test",
     "test:coverage": "node --test --experimental-test-coverage \"test/**/*.test.js\"",
-    "check": "npm run lint && npm run typecheck && npm test && npm run test:web"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:web"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.20.5",
     "eslint": "^10.15.0",
     "globals": "^17.14.0",
+    "prettier": "^3.10.1",
     "typescript": "~5.9"
   }
 }

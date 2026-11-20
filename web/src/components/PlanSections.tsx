@@ -70,7 +70,12 @@ export function ActionsCard({ actions }: { actions: Action[] }) {
                     <p className="mt-2 text-xs text-ink-faint">
                       Source:{' '}
                       {a.source.url ? (
-                        <a href={a.source.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 underline underline-offset-2">
+                        <a
+                          href={a.source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 underline underline-offset-2"
+                        >
                           {a.source.label} <ExternalLink className="h-3 w-3" aria-hidden="true" />
                           <span className="sr-only">(opens in a new tab)</span>
                         </a>
@@ -104,15 +109,23 @@ export function CommuteCard({ commute }: { commute: CommuteSummary }) {
           <caption className="mb-2 text-left text-sm font-semibold text-ink">Lower-emission alternatives</caption>
           <thead className="text-ink-faint">
             <tr>
-              <th scope="col" className="py-1.5 font-semibold">Option</th>
-              <th scope="col" className="py-1.5 text-right font-semibold">kg CO₂e a year</th>
-              <th scope="col" className="py-1.5 text-right font-semibold">You save</th>
+              <th scope="col" className="py-1.5 font-semibold">
+                Option
+              </th>
+              <th scope="col" className="py-1.5 text-right font-semibold">
+                kg CO₂e a year
+              </th>
+              <th scope="col" className="py-1.5 text-right font-semibold">
+                You save
+              </th>
             </tr>
           </thead>
           <tbody>
             {commute.alternatives.map((alt) => (
               <tr key={alt.mode} className="border-t border-haze-100">
-                <th scope="row" className="py-1.5 font-medium text-ink">{alt.label}</th>
+                <th scope="row" className="py-1.5 font-medium text-ink">
+                  {alt.label}
+                </th>
                 <td className="py-1.5 text-right tabular-nums">{formatNumber(alt.kgPerYear)}</td>
                 <td className="py-1.5 text-right font-semibold tabular-nums text-leaf-700">
                   {formatNumber(alt.kgSavedPerYear)} kg ({alt.percentSaved}%)

@@ -77,7 +77,12 @@ export async function fetchGoogleAir({ lat, lon }, { apiKey, timeZone, now = new
     /** @type {Promise<{ hourlyForecasts?: GoogleConditions[] }>} */ (
       postJson(
         `${BASE_URL}/forecast:lookup`,
-        { location, period: { startTime: start.toISOString(), endTime: end.toISOString() }, extraComputations: ['POLLUTANT_CONCENTRATION'], pageSize: FORECAST_HOURS },
+        {
+          location,
+          period: { startTime: start.toISOString(), endTime: end.toISOString() },
+          extraComputations: ['POLLUTANT_CONCENTRATION'],
+          pageSize: FORECAST_HOURS,
+        },
         request,
       )
     ),

@@ -3,9 +3,7 @@
   "installCommand": "npm ci && npm --prefix web ci",
   "buildCommand": "npm run build",
   "outputDirectory": "web/dist",
-  "regions": [
-    "bom1"
-  ],
+  "regions": ["bom1"],
   "functions": {
     "server.js": {
       "maxDuration": 60,

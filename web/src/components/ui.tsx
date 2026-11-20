@@ -55,9 +55,75 @@ export function Field({ id, label, hint, error, children }: FieldProps) {
   );
 }
 
+interface Option<T extends string> {
+  value: T;
+  label: string;
+}
+
+interface SelectFieldProps<T extends string> {
+  id: string;
+  label: string;
+  value: T;
+  options: readonly Option<T>[];
+  onChange: (value: T) => void;
+  error?: string;
+}
+
+/** A labelled <select> whose value is one of a fixed set of options. */
+export function SelectField<T extends string>({ id, label, value, options, onChange, error }: SelectFieldProps<T>) {
+  return (
+    <Field id={id} label={label} error={error}>
+      {(props) => (
+        <select {...props} value={value} onChange={(e) => onChange(e.target.value as T)}>
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      )}
+    </Field>
+  );
+}
+
+interface NumberFieldProps {
+  id: string;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  hint?: string;
+  error?: string;
+  onChange: (value: number) => void;
+}
+
+/** A labelled number input; an emptied field reads as 0 so the form never holds NaN. */
+export function NumberField({ id, label, value, min, max, step = 1, hint, error, onChange }: NumberFieldProps) {
+  return (
+    <Field id={id} label={label} hint={hint} error={error}>
+      {(props) => (
+        <input
+          {...props}
+          type="number"
+          inputMode="decimal"
+          min={min}
+          max={max}
+          step={step}
+          value={String(value)}
+          onChange={(e) => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
+        />
+      )}
+    </Field>
+  );
+}
+
 export function Checkbox({ id, label, checked, onChange }: { id: string; label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
-    <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-haze-200 px-3 py-2 text-sm font-medium text-ink hover:bg-haze-50">
+    <label
+      htmlFor={id}
+      className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-haze-200 px-3 py-2 text-sm font-medium text-ink hover:bg-haze-50"
+    >
       <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-5 w-5 accent-leaf-700" />
       {label}
     </label>

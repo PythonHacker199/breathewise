@@ -76,6 +76,20 @@ function isRecord(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** A field left empty by a form: absent, null or an empty string. @param {unknown} value */
+const isBlank = (value) => value === undefined || value === null || value === '';
+
+/**
+ * @param {unknown} value
+ * @param {{ min: number, max: number, integer: boolean }} range
+ * @returns {value is number}
+ */
+function isNumberInRange(value, { min, max, integer }) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return false;
+  if (integer && !Number.isInteger(value)) return false;
+  return value >= min && value <= max;
+}
+
 /**
  * Reads fields from one section of the request, recording errors under "section.field".
  */
@@ -98,13 +112,11 @@ class SectionReader {
    */
   number(field, fallback, { min, max, integer = false }) {
     const raw = this.source[field];
-    if (raw === undefined || raw === null || raw === '') return fallback;
+    if (isBlank(raw)) return fallback;
     const value = typeof raw === 'string' ? Number(raw) : raw;
-    if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) {
-      this.errors[`${this.section}.${field}`] = `Enter ${integer ? 'a whole number' : 'a number'} from ${min} to ${max}.`;
-      return fallback;
-    }
-    return value;
+    if (isNumberInRange(value, { min, max, integer })) return value;
+    this.errors[`${this.section}.${field}`] = `Enter ${integer ? 'a whole number' : 'a number'} from ${min} to ${max}.`;
+    return fallback;
   }
 
   /**

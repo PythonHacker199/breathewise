@@ -2,7 +2,7 @@
  * Turns an air-quality reading and a household profile into the full, deterministic plan.
  * Every number the user sees comes from here, never from the language model.
  */
-import { indiaCategoryForPm25, overallAqi, timesWhoGuideline } from './aqi.js';
+import { AQI_LEVEL, indiaCategoryForPm25, overallAqi, timesWhoGuideline } from './aqi.js';
 import { AIR_EXCHANGE_PER_HOUR, cigarettesPerDay, indoorPm25, roomVolume } from './exposure.js';
 import { commuteAlternatives, commuteEmissions, MODE_LABELS } from './emissions.js';
 import { buildRoutine } from './routine.js';
@@ -59,7 +59,7 @@ export function buildPlan({ air, profile, now }) {
     localIndex: air.localIndex,
     indoorEstimate,
     indoorCigarettesPerDay: cigarettesPerDay(indoorEstimate),
-    sensitiveAlert: sensitive && category.level >= 2,
+    sensitiveAlert: sensitive && category.level >= AQI_LEVEL.SENSITIVE,
     observedAt: air.current.time,
     source: air.source,
   };

@@ -95,9 +95,16 @@ export interface Coach {
   oneThing: string;
 }
 
+/** One forecast hour for the chart, with its EPA category computed on the server. */
+export interface HourlyPoint {
+  time: string;
+  pm25: number;
+  category: Pick<AqiCategory, 'key' | 'label' | 'color'>;
+}
+
 export interface PlanResponse {
   place: Location;
-  air: { source: 'google' | 'open-meteo'; timeZone: string; hourly: { time: string; pm25: number }[] };
+  air: { source: 'google' | 'open-meteo'; timeZone: string; hourly: HourlyPoint[] };
   plan: {
     assessment: Assessment;
     routine: { items: RoutineItem[]; exerciseDoseSavedUg: number };

@@ -16,7 +16,20 @@ const profile = (over = {}) => structuredClone({ ...DEFAULT_PROFILE, ...over });
 
 describe('US EPA AQI (2024 PM2.5 breakpoints)', () => {
   test('band edges map to the published index values', () => {
-    const cases = [[0, 0], [9.0, 50], [9.1, 51], [35.4, 100], [35.5, 101], [55.4, 150], [55.5, 151], [125.4, 200], [125.5, 201], [225.4, 300], [225.5, 301], [325.4, 500]];
+    const cases = [
+      [0, 0],
+      [9.0, 50],
+      [9.1, 51],
+      [35.4, 100],
+      [35.5, 101],
+      [55.4, 150],
+      [55.5, 151],
+      [125.4, 200],
+      [125.5, 201],
+      [225.4, 300],
+      [225.5, 301],
+      [325.4, 500],
+    ];
     for (const [pm25, aqi] of cases) assert.equal(aqiFromPm25(pm25), aqi, `PM2.5 ${pm25}`);
   });
 
@@ -32,7 +45,16 @@ describe('US EPA AQI (2024 PM2.5 breakpoints)', () => {
   });
 
   test('PM10 breakpoints', () => {
-    for (const [pm10, aqi] of [[54, 50], [55, 51], [154, 100], [155, 101], [424, 300], [425, 301]]) assert.equal(aqiFromPm10(pm10), aqi);
+    for (const [pm10, aqi] of [
+      [54, 50],
+      [55, 51],
+      [154, 100],
+      [155, 101],
+      [424, 300],
+      [425, 301],
+    ]) {
+      assert.equal(aqiFromPm10(pm10), aqi);
+    }
   });
 
   test('rejects invalid input', () => {
@@ -54,7 +76,14 @@ describe('US EPA AQI (2024 PM2.5 breakpoints)', () => {
   });
 
   test('India NAQI bands and WHO multiples', () => {
-    for (const [pm25, label] of [[30, 'Good'], [31, 'Satisfactory'], [90, 'Moderate'], [120, 'Poor'], [250, 'Very Poor'], [251, 'Severe']]) {
+    for (const [pm25, label] of [
+      [30, 'Good'],
+      [31, 'Satisfactory'],
+      [90, 'Moderate'],
+      [120, 'Poor'],
+      [250, 'Very Poor'],
+      [251, 'Severe'],
+    ]) {
       assert.equal(indiaCategoryForPm25(pm25), label);
     }
     assert.equal(timesWhoGuideline(64.3, 'pm25'), 4.3);
@@ -134,13 +163,19 @@ describe('daily routine', () => {
   test('routine quantifies the exercise-timing benefit and flags sensitive members', () => {
     const routine = buildRoutine({ hourly, timeZone: 'Asia/Kolkata', now: NOW, exerciseMinutes: 30, hasSensitiveMembers: true });
     assert.equal(routine.exerciseDoseSavedUg, 104); // 150 × 1.6 × 0.5 − 20 × 1.6 × 0.5
-    assert.deepEqual(routine.items.map((i) => i.id), ['exercise-window', 'ventilate', 'avoid-peak', 'sensitive']);
+    assert.deepEqual(
+      routine.items.map((i) => i.id),
+      ['exercise-window', 'ventilate', 'avoid-peak', 'sensitive'],
+    );
   });
 
   test('very polluted days move exercise indoors and keep windows shut', () => {
     const smog = hourly.map((h) => ({ ...h, pm25: 180 }));
     const routine = buildRoutine({ hourly: smog, timeZone: 'Asia/Kolkata', now: NOW, exerciseMinutes: 30, hasSensitiveMembers: false });
-    assert.deepEqual(routine.items.map((i) => i.id), ['exercise-indoors', 'keep-closed', 'avoid-peak']);
+    assert.deepEqual(
+      routine.items.map((i) => i.id),
+      ['exercise-indoors', 'keep-closed', 'avoid-peak'],
+    );
   });
 
   test('no forecast means no routine', () => {
@@ -183,7 +218,10 @@ describe('personalised actions', () => {
 
   test('actions are sorted by priority', () => {
     const priorities = buildActions({ outdoorPm25: 100, level: 3, profile: profile() }).map((a) => a.priority);
-    assert.deepEqual([...priorities].sort((a, b) => b - a), priorities);
+    assert.deepEqual(
+      [...priorities].sort((a, b) => b - a),
+      priorities,
+    );
   });
 });
 

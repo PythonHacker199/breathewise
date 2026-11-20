@@ -106,7 +106,11 @@ export function optionsFromEnv(env) {
     model: env.GEMINI_MODEL || undefined,
     // Comma-separated; set to an empty string to disable fallback.
     fallbackModels:
-      env.GEMINI_FALLBACK_MODELS === undefined ? undefined : env.GEMINI_FALLBACK_MODELS.split(',').map((s) => s.trim()).filter(Boolean),
+      env.GEMINI_FALLBACK_MODELS === undefined
+        ? undefined
+        : env.GEMINI_FALLBACK_MODELS.split(',')
+            .map((s) => s.trim())
+            .filter(Boolean),
     // K_SERVICE is set by Cloud Run and VERCEL by Vercel; both sit behind a front end that sets X-Forwarded-For.
     trustProxy: env.TRUST_PROXY === '1' || Boolean(env.K_SERVICE) || Boolean(env.VERCEL),
   };
